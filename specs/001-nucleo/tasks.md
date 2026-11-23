@@ -41,7 +41,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** se crea la carpeta del backend con Python y las herramientas para probar y revisar el estilo.
   - **Commit:** `chore(001): T1 crear proyecto backend con uv`
 
-- [ ] **T2 · PostgreSQL con Docker Compose y `.env.example`**
+- [x] **T2 · PostgreSQL con Docker Compose y `.env.example`**
   - **Cubre:** RNF-6 (sin secretos en git) · Plan §6.1, §6.2
   - **Depende de:** T1
   - **Tests primero:** `tests/integration/test_db_connection.py` ejecuta `SELECT 1` contra `TEST_DATABASE_URL`. Falla mientras la BD no esté levantada.

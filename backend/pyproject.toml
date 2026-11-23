@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "Núcleo de la app de finanzas personales (spec 001)."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "psycopg[binary]>=3",
+    "sqlalchemy>=2",
+]
 
 [dependency-groups]
 dev = [

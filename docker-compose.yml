@@ -1,0 +1,23 @@
+# Entorno local (plan 001 §6.1). Uso: docker compose up -d db
+services:
+  db:
+    image: postgres:16
+    environment:
+      # Valores por defecto solo para local; se sobrescriben desde .env.
+      POSTGRES_USER: ${POSTGRES_USER:-finanzas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finanzas}
+      POSTGRES_DB: ${POSTGRES_DB:-finanzas}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Se ejecuta solo la primera vez (volumen vacío): crea finanzas_test.
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
