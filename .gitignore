@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Preferencias locales de Claude (no se publican)
+CLAUDE.local.md
+
 # Datos reales (nunca en git)
 data/
 *.xlsx
