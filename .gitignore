@@ -1,0 +1,33 @@
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+
+# Datos reales (nunca en git)
+data/
+*.xlsx
+*.xls
+*.csv
+*.pdf
+*.sqlite
+*.db
+*.dump
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+dist/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
