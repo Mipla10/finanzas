@@ -15,9 +15,10 @@ registrar, la app fracasa aunque todo lo demás funcione.
 
 ## 2. El dinero es exacto: enteros en centavos
 Todo monto se guarda como entero en centavos de COP (`BIGINT` en BD, `int`
-en Python, nunca `float`). Los montos son siempre positivos y el tipo de
-movimiento define el signo. El formateo a pesos ocurre solo en la capa de
-presentación.
+en Python, nunca `float`). Los montos de los movimientos son siempre
+positivos; el tipo (y, en los ajustes, su dirección) define si suman o
+restan. Los saldos sí pueden ser cero o negativos. El formateo a pesos
+ocurre solo en la capa de presentación.
 **Razón:** los flotantes acumulan errores de redondeo y los intereses y
 algunas compras traen centavos. Un saldo que no cuadra por un peso
 destruye la confianza en toda la app.

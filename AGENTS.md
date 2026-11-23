@@ -65,13 +65,16 @@ Cada spec entrega una versión funcional de punta a punta.
 │   ├── alembic/               # migraciones
 │   ├── src/finanzas/
 │   │   ├── domain/            # lógica pura: dinero, saldos, reglas
+│   │   ├── services/          # casos de uso: orquestan dominio + db en una transacción
 │   │   ├── db/                # modelos SQLAlchemy, repositorios
 │   │   ├── api/               # routers FastAPI, esquemas Pydantic
 │   │   ├── integrations/      # whatsapp/, llm/ (desde 005)
 │   │   └── main.py
 │   └── tests/
 │       ├── unit/              # dominio, sin BD
-│       └── integration/       # API + PostgreSQL
+│       ├── integration/       # API + PostgreSQL
+│       ├── scenarios/         # escenarios completos con valores esperados fijos
+│       └── perf/              # rendimiento (manual, no corre en CI)
 ├── frontend/
 │   ├── package.json
 │   ├── src/
@@ -97,8 +100,9 @@ Cada spec entrega una versión funcional de punta a punta.
 - **Idioma:** identificadores, tablas, commits y nombres de archivo en
   inglés. Interfaz, mensajes del bot, specs y docs en español.
 - **Dinero:** `int` en centavos de COP (`BIGINT` en BD). Nunca `float`.
-  Formatear a pesos solo en la presentación. Montos siempre positivos; el
-  tipo define el signo.
+  Formatear a pesos solo en la presentación. Montos de movimientos siempre
+  positivos; el tipo (y, en los ajustes, su dirección) define si suman o
+  restan. Los saldos pueden ser cero o negativos.
 - **Saldos:** siempre derivados (saldo inicial + movimientos). No existe
   una columna de saldo editable.
 - **Borrado:** los movimientos se anulan o corrigen con rastro, no se
@@ -111,8 +115,9 @@ Cada spec entrega una versión funcional de punta a punta.
 - **Python:** type hints en todas las funciones públicas; Ruff sin
   errores.
 - **TypeScript:** modo `strict`.
-- **Fechas:** se guardan con zona horaria y se muestran en
-  `America/Bogota`.
+- **Fechas:** los movimientos llevan solo fecha (sin hora); «hoy» se
+  calcula en `America/Bogota`. Las marcas de tiempo internas (registro,
+  versiones, anulación) se guardan con zona horaria.
 - **Commits:** Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`…)
   con referencia a la spec, p. ej. `feat(001): calcular saldo derivado`.
 
