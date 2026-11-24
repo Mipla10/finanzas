@@ -276,3 +276,173 @@ def test_get_account_of_another_user_looks_like_it_does_not_exist(
         "account_id",
         lambda: service.get_account(db_session, owner_b.id, mine.id),
     )
+
+
+# --- T25: editar (RF-5) ---
+
+
+def test_rename_keeps_movements_and_updates_key(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    make_movement: Callable[..., Any],
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    movement = make_movement(owner_a, from_account=lulo)
+    renamed = service.update_account(
+        db_session, owner_a.id, clock, lulo.id, name=" Lulo  Bank "
+    )
+    assert (renamed.name, renamed.name_key) == ("Lulo Bank", "lulo bank")
+    assert movement.from_account_id == lulo.id
+
+
+def test_rename_to_another_accounts_name_is_a_conflict(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    create(db_session, owner_a, clock, name="Nequi")
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    expect(
+        Conflict,
+        "duplicate_account_name",
+        "name",
+        lambda: service.update_account(
+            db_session, owner_a.id, clock, lulo.id, name="NEQUI"
+        ),
+    )
+
+
+def test_rename_changing_only_case_of_its_own_name_is_fine(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    nequi = create(db_session, owner_a, clock, name="nequi")
+    assert (
+        service.update_account(
+            db_session, owner_a.id, clock, nequi.id, name="Nequi"
+        ).name
+        == "Nequi"
+    )
+
+
+def test_blank_new_name_is_rejected(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    expect(
+        InvalidData,
+        "required",
+        "name",
+        lambda: service.update_account(
+            db_session, owner_a.id, clock, lulo.id, name="  "
+        ),
+    )
+
+
+def test_initial_balance_and_start_date_editable_without_movements(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    edited = service.update_account(
+        db_session,
+        owner_a.id,
+        clock,
+        lulo.id,
+        initial_balance_cents=-250000,
+        start_date=date(2026, 10, 1),
+    )
+    assert (edited.initial_balance_cents, edited.start_date) == (
+        -250000,
+        date(2026, 10, 1),
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("initial_balance_cents", 999), ("start_date", date(2026, 10, 1))],
+)
+@pytest.mark.parametrize("voided", [False, True])
+def test_initial_values_locked_once_there_are_movements(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    make_movement: Callable[..., Any],
+    field: str,
+    value: Any,
+    voided: bool,
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    movement = make_movement(owner_a, from_account=lulo)
+    if voided:  # un movimiento anulado sigue existiendo: también bloquea
+        movement.voided_at = clock.now()
+        db_session.flush()
+    expect(
+        Conflict,
+        "account_has_movements",
+        field,
+        lambda: service.update_account(
+            db_session, owner_a.id, clock, lulo.id, **{field: value}
+        ),
+    )
+
+
+def test_initial_values_locked_by_a_past_version_too(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    make_movement: Callable[..., Any],
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    other = create(db_session, owner_a, clock, name="Nequi")
+    movement = make_movement(owner_a, from_account=lulo)
+    movement.from_account_id = other.id  # el movimiento ya no la usa, su versión 1 sí
+    db_session.flush()
+    expect(
+        Conflict,
+        "account_has_movements",
+        "initial_balance_cents",
+        lambda: service.update_account(
+            db_session, owner_a.id, clock, lulo.id, initial_balance_cents=1
+        ),
+    )
+
+
+def test_future_start_date_is_rejected_on_edit(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    expect(
+        InvalidData,
+        "start_date_in_future",
+        "start_date",
+        lambda: service.update_account(
+            db_session,
+            owner_a.id,
+            clock,
+            lulo.id,
+            start_date=clock.today() + timedelta(days=1),
+        ),
+    )
+
+
+def test_editing_another_users_account_looks_like_it_does_not_exist(
+    db_session: Session, clock: FixedClock, owner_a: User, owner_b: User
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    expect(
+        NotFound,
+        "resource_not_found",
+        "account_id",
+        lambda: service.update_account(
+            db_session, owner_b.id, clock, lulo.id, name="Mía"
+        ),
+    )
+
+
+@pytest.mark.parametrize("forbidden", ["account_type", "parent_id"])
+def test_type_and_parent_cannot_be_changed(
+    db_session: Session, clock: FixedClock, owner_a: User, forbidden: str
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    with pytest.raises(TypeError):
+        service.update_account(
+            db_session, owner_a.id, clock, lulo.id, **{forbidden: None}
+        )

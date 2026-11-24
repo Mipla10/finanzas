@@ -299,7 +299,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la base de datos calcula todos los saldos de una vez, y se comprueba que da lo mismo que la fórmula «a mano».
   - **Commit:** `feat(001): T24 consulta agregada de saldos`
 
-- [ ] **T25 · Renombrar y editar saldo y fecha inicial**
+- [x] **T25 · Renombrar y editar saldo y fecha inicial**
   - **Cubre:** RF-5 · Plan §4.2
   - **Depende de:** T23
   - **Tests primero:** `tests/integration/test_accounts_service.py`:

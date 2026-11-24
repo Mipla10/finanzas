@@ -84,3 +84,46 @@ def create_account(
     session.add(account)
     session.commit()
     return account
+
+
+def update_account(
+    session: Session,
+    owner_id: uuid.UUID,
+    clock: Clock,
+    account_id: uuid.UUID,
+    *,
+    name: str | None = None,
+    initial_balance_cents: int | None = None,
+    start_date: date | None = None,
+) -> Account:
+    """Edita una cuenta (RF-5). None = no cambiar ese dato.
+
+    El tipo y la cuenta padre nunca cambian (no son parámetros). El saldo y la
+    fecha iniciales solo cambian si no hay movimientos: si no, se usa un ajuste.
+    """
+    account = get_account(session, owner_id, account_id)
+
+    if name is not None:
+        shown, name_key = normalize_name(
+            name, field="name", max_length=ACCOUNT_NAME_MAX
+        )
+        if repo.name_taken(session, owner_id, name_key, exclude_id=account.id):
+            raise Conflict("duplicate_account_name", field="name")
+        account.name, account.name_key = shown, name_key
+
+    initial_values = {
+        "initial_balance_cents": initial_balance_cents,
+        "start_date": start_date,
+    }
+    changing = [field for field, value in initial_values.items() if value is not None]
+    if changing and repo.used_by_movements(session, owner_id, account.id):
+        raise Conflict("account_has_movements", field=changing[0])
+    if initial_balance_cents is not None:
+        account.initial_balance_cents = validate_balance(
+            initial_balance_cents, field="initial_balance_cents"
+        )
+    if start_date is not None:
+        account.start_date = validate_start_date(start_date, today=clock.today())
+
+    session.commit()
+    return account

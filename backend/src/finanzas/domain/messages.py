@@ -27,6 +27,9 @@ MESSAGES: dict[str, str] = {
     "parent_only_for_pocket": "Solo un bolsillo puede tener cuenta padre.",
     "parent_must_be_bank": "La cuenta padre de un bolsillo debe ser un banco.",
     "parent_archived": "La cuenta padre está archivada.",
+    "account_has_movements": (
+        "La cuenta ya tiene movimientos: corrige su saldo con un ajuste."
+    ),
     # Movimientos (RF-7 a RF-11)
     "not_allowed_for_type": "Este campo no aplica a este tipo de movimiento.",
     "same_account": "La cuenta de destino debe ser distinta de la de origen.",

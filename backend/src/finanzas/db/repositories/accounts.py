@@ -2,10 +2,10 @@
 
 import uuid
 
-from sqlalchemy import exists, select
+from sqlalchemy import exists, or_, select
 from sqlalchemy.orm import Session
 
-from finanzas.db.models import Account
+from finanzas.db.models import Account, Movement, MovementVersion
 
 
 def get_owned(
@@ -17,11 +17,40 @@ def get_owned(
     )
 
 
-def name_taken(session: Session, owner_id: uuid.UUID, name_key: str) -> bool:
+def name_taken(
+    session: Session,
+    owner_id: uuid.UUID,
+    name_key: str,
+    exclude_id: uuid.UUID | None = None,
+) -> bool:
+    """¿Otra cuenta del dueño usa ese nombre? `exclude_id`: la propia (renombrar)."""
     query = select(Account.id).where(
         Account.owner_id == owner_id, Account.name_key == name_key
     )
+    if exclude_id is not None:
+        query = query.where(Account.id != exclude_id)
     return bool(session.scalar(select(exists(query))))
+
+
+def used_by_movements(
+    session: Session, owner_id: uuid.UUID, account_id: uuid.UUID
+) -> bool:
+    """¿Algún movimiento (anulados incluidos) o versión anterior la usa? (plan §3.8)"""
+    in_movements = select(Movement.id).where(
+        Movement.owner_id == owner_id,
+        or_(
+            Movement.from_account_id == account_id,
+            Movement.to_account_id == account_id,
+        ),
+    )
+    in_versions = select(MovementVersion.id).where(
+        MovementVersion.owner_id == owner_id,
+        or_(
+            MovementVersion.from_account_id == account_id,
+            MovementVersion.to_account_id == account_id,
+        ),
+    )
+    return bool(session.scalar(select(exists(in_movements) | exists(in_versions))))
 
 
 def list_owned(
