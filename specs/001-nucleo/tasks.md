@@ -431,7 +431,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** qué no se puede corregir, y por qué los datos viejos se pueden arreglar aunque su cuenta esté guardada.
   - **Commit:** `feat(001): T35 reglas de corrección`
 
-- [ ] **T36 · Corrección concurrente**
+- [x] **T36 · Corrección concurrente**
   - **Cubre:** RF-19 · Plan §3.6, DT-6, riesgo R-4
   - **Depende de:** T35
   - **Tests primero:** `tests/integration/test_corrections_concurrency.py`. Dos sesiones corrigen el mismo movimiento; la segunda espera el bloqueo de la primera. Al final hay 3 versiones, gana la última y no se usan `sleep` arbitrarios.
