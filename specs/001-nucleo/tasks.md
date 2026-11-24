@@ -125,7 +125,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** todos los errores se responden igual y en español, para que la web y WhatsApp sepan qué falló.
   - **Commit:** `feat(001): T9 formato estándar de errores`
 
-- [ ] **T10 · Errores de validación traducidos al español**
+- [x] **T10 · Errores de validación traducidos al español**
   - **Cubre:** RF-22, RNF-7 · Plan §4.4, riesgo R-3
   - **Depende de:** T9
   - **Tests primero:** mismo archivo que T9. Un JSON con un campo faltante, un tipo equivocado o un texto demasiado largo devuelve `422 invalid_data`, con `field` correcto y un mensaje en español (sin textos en inglés de Pydantic).
