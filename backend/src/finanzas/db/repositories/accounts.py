@@ -17,6 +17,20 @@ def get_owned(
     )
 
 
+def get_owned_for_update(
+    session: Session, owner_id: uuid.UUID, account_id: uuid.UUID
+) -> Account | None:
+    """Como get_owned, pero bloquea la fila hasta el fin de la transacción.
+
+    Dos operaciones simultáneas sobre la misma cuenta esperan su turno (DT-6).
+    """
+    return session.scalar(
+        select(Account)
+        .where(Account.id == account_id, Account.owner_id == owner_id)
+        .with_for_update()
+    )
+
+
 def name_taken(
     session: Session,
     owner_id: uuid.UUID,

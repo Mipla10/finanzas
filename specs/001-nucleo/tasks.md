@@ -392,7 +392,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la app te avisa (sin impedirte nada) cuando una cuenta queda en rojo.
   - **Commit:** `feat(001): T32 advertencias de saldo negativo`
 
-- [ ] **T33 · Servicio de ajuste**
+- [x] **T33 · Servicio de ajuste**
   - **Cubre:** RF-12, RF-14 · CL-14, CL-15, CL-16 · Plan §3.3
   - **Depende de:** T21, T32
   - **Tests primero:** `tests/integration/test_adjustments_service.py`:

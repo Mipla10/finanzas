@@ -3,6 +3,7 @@
 import uuid
 from dataclasses import dataclass, field
 from datetime import date
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -14,6 +15,7 @@ from finanzas.domain.dates import Clock, validate_movement_date
 from finanzas.domain.errors import Conflict, InvalidData, NotFound
 from finanzas.domain.money import validate_amount
 from finanzas.domain.movements import (
+    AdjustmentDirection,
     MovementType,
     validate_category_kind,
     validate_shape,
@@ -50,6 +52,42 @@ def _active_category(
     if category.archived_at is not None:
         raise Conflict("category_archived", field="category_id")
     return category
+
+
+def insert_with_first_version(
+    session: Session,
+    owner_id: uuid.UUID,
+    clock: Clock,
+    movement_type: MovementType,
+    adjustment_direction: AdjustmentDirection | None = None,
+    **data: Any,
+) -> Movement:
+    """Guarda un movimiento YA validado y su versión 1 (RF-20). No confirma."""
+    now = clock.now()
+    movement = Movement(
+        id=uuid.uuid4(),
+        owner_id=owner_id,
+        type=movement_type,
+        adjustment_direction=adjustment_direction,
+        created_at=now,
+        updated_at=now,
+        current_version=1,
+        **data,
+    )
+    session.add(movement)
+    session.flush()
+    session.add(
+        MovementVersion(
+            id=uuid.uuid4(),
+            owner_id=owner_id,
+            movement_id=movement.id,
+            version_no=1,
+            changed_fields=[],
+            created_at=now,
+            **data,
+        )
+    )
+    return movement
 
 
 def create_movement(
@@ -99,38 +137,19 @@ def create_movement(
         validate_category_kind(movement_type, category.kind)
     shown_merchant, merchant_key = normalize_merchant(merchant)
 
-    now = clock.now()
-    data = {
-        "amount_cents": amount,
-        "date": movement_date,
-        "from_account_id": from_account_id,
-        "to_account_id": to_account_id,
-        "category_id": category_id,
-        "merchant": shown_merchant,
-        "merchant_key": merchant_key,
-        "note": normalize_note(note),
-    }
-    movement = Movement(
-        id=uuid.uuid4(),
-        owner_id=owner_id,
-        type=movement_type,
-        created_at=now,
-        updated_at=now,
-        current_version=1,
-        **data,
-    )
-    session.add(movement)
-    session.flush()
-    session.add(
-        MovementVersion(
-            id=uuid.uuid4(),
-            owner_id=owner_id,
-            movement_id=movement.id,
-            version_no=1,
-            changed_fields=[],
-            created_at=now,
-            **data,
-        )
+    movement = insert_with_first_version(
+        session,
+        owner_id,
+        clock,
+        movement_type,
+        amount_cents=amount,
+        date=movement_date,
+        from_account_id=from_account_id,
+        to_account_id=to_account_id,
+        category_id=category_id,
+        merchant=shown_merchant,
+        merchant_key=merchant_key,
+        note=normalize_note(note),
     )
     warnings = warnings_for(session, owner_id, accounts)
     session.commit()
