@@ -357,7 +357,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** guardar o borrar categorías sin romper el historial.
   - **Commit:** `feat(001): T29 archivar y borrar categorías`
 
-- [ ] **T30 · Crear gasto e ingreso**
+- [x] **T30 · Crear gasto e ingreso**
   - **Cubre:** RF-2, RF-7, RF-8, RF-9 · CL-6, CL-8, CL-9 · Plan §3.5
   - **Depende de:** T19, T23, T28
   - **Tests primero:** `tests/integration/test_movements_service.py`:

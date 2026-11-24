@@ -41,6 +41,11 @@ MESSAGES: dict[str, str] = {
     "category_in_use": "La categoría ya se usó: archívala en vez de borrarla.",
     # Movimientos (RF-7 a RF-11)
     "not_allowed_for_type": "Este campo no aplica a este tipo de movimiento.",
+    "account_archived": "La cuenta está archivada.",
+    "category_archived": "La categoría está archivada.",
+    "adjustment_not_via_movements": (
+        "Los ajustes se hacen con el ajuste de saldo de la cuenta."
+    ),
     "same_account": "La cuenta de destino debe ser distinta de la de origen.",
     "category_wrong_kind": "La categoría no es de la clase correcta para este tipo.",
     # Advertencias de saldo (RF-14): avisan, nunca bloquean
