@@ -176,7 +176,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** se crea la tabla donde se guarda cada versión de un movimiento, como el historial de Google Docs.
   - **Commit:** `feat(001): T14 tabla movement_versions`
 
-- [ ] **T15 · Fixtures sintéticos**
+- [x] **T15 · Fixtures sintéticos**
   - **Cubre:** RNF-5, RNF-6 · Plan §8.2
   - **Depende de:** T14, T4
   - **Tests primero:** `tests/integration/test_fixtures.py` comprueba:
