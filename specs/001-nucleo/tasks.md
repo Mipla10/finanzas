@@ -651,7 +651,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** toda la app arranca con un solo comando, sin instalar nada más.
   - **Commit:** `chore(001): T55 dockerfile y servicio api`
 
-- [ ] **T56 · Revisión final y cierre de la spec**
+- [x] **T56 · Revisión final y cierre de la spec**
   - **Cubre:** RNF-6, RNF-8, RNF-9, criterios de finalización 1, 2, 6, 7 y 8 · Plan §8.4, §9
   - **Depende de:** T51 a T55
   - **Tests primero:** `tests/test_traceability.py` verifica que existe una función `test_cl_<n>_` para cada n de 1 a 39.

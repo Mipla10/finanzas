@@ -144,6 +144,31 @@ def test_delete_unused_is_204_and_used_is_409(
     error_of(client.delete(f"{URL}/{used['id']}"), 409, "conflict", None)
 
 
+def test_cl_32_category_used_only_by_a_voided_movement_cannot_be_deleted(
+    client: TestClient,
+) -> None:
+    category = create(client, "Anulada Prueba")
+    account = client.post(
+        "/api/v1/accounts",
+        json={"name": "Banco Prueba", "type": "bank", "initial_balance_cents": 0},
+    ).json()
+    movement = client.post(
+        "/api/v1/movements",
+        json={
+            "type": "expense",
+            "amount_cents": 1000,
+            "from_account_id": account["id"],
+            "category_id": category["id"],
+        },
+    ).json()["movement"]
+    voided = client.post(f"/api/v1/movements/{movement['id']}/void")
+    assert voided.status_code == 200, voided.text
+
+    response = client.delete(f"{URL}/{category['id']}")
+    error_of(response, 409, "conflict", None)
+    assert client.get(URL).json()["items"][0]["id"] == category["id"]
+
+
 def test_category_of_other_owner_is_404_like_a_missing_one(
     client: TestClient, owner_b: User, make_category: Callable[..., Category]
 ) -> None:
