@@ -193,7 +193,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
 
 ### 3a. Reglas puras (sin base de datos)
 
-- [ ] **T16 · Montos en centavos (`domain/money.py`)**
+- [x] **T16 · Montos en centavos (`domain/money.py`)**
   - **Cubre:** RF-1 · CL-11, CL-12, CL-13 · Plan §4.1
   - **Depende de:** T9
   - **Tests primero:** `tests/unit/test_money.py`:
