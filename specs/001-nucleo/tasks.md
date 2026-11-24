@@ -600,7 +600,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
 
 ## Fase 5 — Aislamiento, validación y cierre
 
-- [ ] **T51 · Aislamiento entre usuarios en cada operación**
+- [x] **T51 · Aislamiento entre usuarios en cada operación**
   - **Cubre:** RNF-5, RF-22 · CL-39 · Plan §8.3
   - **Depende de:** T50
   - **Tests primero:** `tests/integration/test_isolation.py`, parametrizado. `owner_b` intenta, sobre los datos de `owner_a`:
