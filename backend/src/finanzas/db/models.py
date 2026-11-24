@@ -20,6 +20,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from finanzas.db.base import Base
 from finanzas.domain.accounts import AccountType
+from finanzas.domain.categories import CategoryKind
 
 
 def pg_enum(enum_class: type, name: str) -> SAEnum:
@@ -65,4 +66,24 @@ class Account(Base):
         ),
         CheckConstraint("parent_id <> id", name="not_own_parent"),
         Index(None, "owner_id"),
+    )
+
+
+class Category(Base):
+    __tablename__ = "categories"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    owner_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id"))
+    name: Mapped[str] = mapped_column(String(40))
+    name_key: Mapped[str] = mapped_column(String(40))
+    # La clase no se puede cambiar una vez creada (RF-6); lo controla el servicio.
+    kind: Mapped[CategoryKind] = mapped_column(pg_enum(CategoryKind, "category_kind"))
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        # Destino de las FK compuestas desde movements (plan §2.1).
+        UniqueConstraint("id", "owner_id"),
+        # Nombre único por usuario y clase (RF-6); también sirve de índice por dueño.
+        UniqueConstraint("owner_id", "kind", "name_key"),
     )

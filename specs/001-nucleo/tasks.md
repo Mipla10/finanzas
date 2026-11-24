@@ -150,7 +150,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** se crean las tablas de usuarios y cuentas, con reglas que la base de datos hace cumplir sola.
   - **Commit:** `feat(001): T11 tablas users y accounts`
 
-- [ ] **T12 · Tabla `categories`**
+- [x] **T12 · Tabla `categories`**
   - **Cubre:** RF-6, RNF-5 · Plan §2.2
   - **Depende de:** T11
   - **Tests primero:** `tests/integration/test_schema_categories.py`. Se rechaza un nombre duplicado en la misma clase y dueño, y se acepta el mismo nombre en otra clase.
