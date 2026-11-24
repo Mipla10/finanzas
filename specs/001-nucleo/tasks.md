@@ -137,7 +137,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
 
 ## Fase 2 — Modelo de datos y migraciones
 
-- [ ] **T11 · Tablas `users` y `accounts`**
+- [x] **T11 · Tablas `users` y `accounts`**
   - **Cubre:** RF-4, RNF-5 · CL-33 (a nivel de BD) · Plan §2.1, §2.2
   - **Depende de:** T5
   - **Tests primero:** `tests/integration/test_schema_accounts.py`:

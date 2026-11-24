@@ -6,6 +6,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from finanzas.config import DatabaseSettings
+from finanzas.db import models  # noqa: F401  (registra las tablas en la metadata)
 from finanzas.db.base import Base
 
 config = context.config
