@@ -346,7 +346,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** manejar tus categorías («Domicilios», «Salario»…).
   - **Commit:** `feat(001): T28 crear y renombrar categorías`
 
-- [ ] **T29 · Categorías: archivar, desarchivar y borrar**
+- [x] **T29 · Categorías: archivar, desarchivar y borrar**
   - **Cubre:** RF-6 · CL-31, CL-32 · Plan §3.8
   - **Depende de:** T28
   - **Tests primero:** `tests/integration/test_categories_service.py`:

@@ -163,3 +163,117 @@ def test_category_of_another_user_looks_like_it_does_not_exist(
         lambda: service.rename_category(db_session, owner_b.id, mine.id, name="Mía"),
     ):
         expect(NotFound, "resource_not_found", "category_id", call)
+
+
+# --- T29: archivar, desarchivar y borrar (RF-6, CL-31, CL-32) ---
+
+
+def test_archive_and_unarchive(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    salud = create(db_session, owner_a, clock, "Salud")
+    archived = service.archive_category(db_session, owner_a.id, clock, salud.id)
+    assert archived.archived_at == clock.now()
+    assert salud not in service.list_categories(db_session, owner_a.id)
+    assert salud in service.list_categories(
+        db_session, owner_a.id, include_archived=True
+    )
+    assert (
+        service.unarchive_category(db_session, owner_a.id, salud.id).archived_at is None
+    )
+    assert salud in service.list_categories(db_session, owner_a.id)
+
+
+def test_archived_category_keeps_its_movements(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    make_movement: Callable[..., Any],
+) -> None:
+    salud = create(db_session, owner_a, clock, "Salud")
+    movement = make_movement(owner_a, category=salud)
+    service.archive_category(db_session, owner_a.id, clock, salud.id)
+    assert movement.category_id == salud.id
+
+
+def test_archiving_twice_or_unarchiving_active_is_a_conflict(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    salud = create(db_session, owner_a, clock, "Salud")
+    expect(
+        Conflict,
+        "not_archived",
+        None,
+        lambda: service.unarchive_category(db_session, owner_a.id, salud.id),
+    )
+    service.archive_category(db_session, owner_a.id, clock, salud.id)
+    expect(
+        Conflict,
+        "already_archived",
+        None,
+        lambda: service.archive_category(db_session, owner_a.id, clock, salud.id),
+    )
+
+
+def test_cl_31_preloaded_category_never_used_can_be_deleted(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    from finanzas.services.bootstrap import seed_default_categories
+
+    seed_default_categories(db_session, owner_a.id, clock)
+    db_session.flush()
+    suscripciones = next(
+        c
+        for c in service.list_categories(db_session, owner_a.id)
+        if c.name == "Suscripciones"
+    )
+    service.delete_category(db_session, owner_a.id, suscripciones.id)
+    expect(
+        NotFound,
+        "resource_not_found",
+        "category_id",
+        lambda: service.get_category(db_session, owner_a.id, suscripciones.id),
+    )
+    assert len(service.list_categories(db_session, owner_a.id)) == 15
+
+
+@pytest.mark.parametrize("how", ["active", "cl_32_only_voided", "only_past_version"])
+def test_used_category_cannot_be_deleted(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    make_movement: Callable[..., Any],
+    how: str,
+) -> None:
+    salud = create(db_session, owner_a, clock, "Salud")
+    otra = create(db_session, owner_a, clock, "Otra")
+    movement = make_movement(owner_a, category=salud)
+    if how == "cl_32_only_voided":
+        movement.voided_at = clock.now()
+    if how == "only_past_version":
+        movement.category_id = otra.id  # solo su versión 1 recuerda «Salud»
+    db_session.flush()
+    expect(
+        Conflict,
+        "category_in_use",
+        None,
+        lambda: service.delete_category(db_session, owner_a.id, salud.id),
+    )
+
+
+@pytest.mark.parametrize("action", ["archive", "unarchive", "delete"])
+def test_another_users_category_looks_like_it_does_not_exist(
+    db_session: Session, clock: FixedClock, owner_a: User, owner_b: User, action: str
+) -> None:
+    mine = create(db_session, owner_a, clock, "Salud")
+    call = {
+        "archive": lambda: service.archive_category(
+            db_session, owner_b.id, clock, mine.id
+        ),
+        "unarchive": lambda: service.unarchive_category(
+            db_session, owner_b.id, mine.id
+        ),
+        "delete": lambda: service.delete_category(db_session, owner_b.id, mine.id),
+    }[action]
+    expect(NotFound, "resource_not_found", "category_id", call)
+    assert service.get_category(db_session, owner_a.id, mine.id) == mine
