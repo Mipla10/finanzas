@@ -217,7 +217,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la regla que hace que «rappi» y «RAPPI» se reconozcan como el mismo comercio.
   - **Commit:** `feat(001): T17 normalizar nombres y comercio`
 
-- [ ] **T18 · Reglas de fecha**
+- [x] **T18 · Reglas de fecha**
   - **Cubre:** RF-2 · CL-6, CL-8, CL-9, CL-10 · Plan §3.5
   - **Depende de:** T4, T9
   - **Tests primero:** `tests/unit/test_date_rules.py`:

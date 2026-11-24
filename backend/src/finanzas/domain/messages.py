@@ -16,6 +16,12 @@ MESSAGES: dict[str, str] = {
     "amount_not_integer": "Debe ser un número entero de centavos.",
     "amount_not_positive": "El monto debe ser mayor que cero.",
     "amount_too_large": "El valor supera el límite técnico de {max} centavos.",
+    # Fechas (RF-2)
+    "date_in_future": "No se admiten fechas futuras.",
+    "date_before_account_start": (
+        "La fecha es anterior al inicio de la cuenta {account} ({start})."
+    ),
+    "start_date_in_future": "La fecha de inicio no puede ser futura.",
     # Validación de formato (traducción de los errores de Pydantic, T10)
     "required": "Este campo es obligatorio.",
     "int_type": "Debe ser un número entero.",
