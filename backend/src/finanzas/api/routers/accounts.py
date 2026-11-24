@@ -5,13 +5,21 @@ import uuid
 from fastapi import APIRouter, Response, status
 
 from finanzas.api.deps import ClockDep, OwnerDep, SessionDep
+from finanzas.api.routers.movements import movement_out
 from finanzas.api.schemas.accounts import (
     AccountCreate,
     AccountList,
     AccountOut,
     AccountUpdate,
 )
+from finanzas.api.schemas.adjustments import (
+    AdjustedOut,
+    AdjustmentRequest,
+    AlreadyBalancedOut,
+)
+from finanzas.api.schemas.movements import WarningOut
 from finanzas.services import accounts as service
+from finanzas.services.adjustments import adjust_balance
 
 router = APIRouter(prefix="/accounts", tags=["cuentas"])
 
@@ -93,3 +101,44 @@ def delete_account(
 ) -> Response:
     service.delete_account(session, owner_id, account_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/{account_id}/adjustments",
+    status_code=status.HTTP_201_CREATED,
+    summary="Ajustar al saldo real de hoy",
+    responses={
+        status.HTTP_200_OK: {
+            "model": AlreadyBalancedOut,
+            "description": "La cuenta ya cuadra: no se crea ningún movimiento.",
+        }
+    },
+)
+def adjust_account(
+    account_id: uuid.UUID,
+    body: AdjustmentRequest,
+    response: Response,
+    session: SessionDep,
+    owner_id: OwnerDep,
+    clock: ClockDep,
+) -> AdjustedOut | AlreadyBalancedOut:
+    result = adjust_balance(
+        session,
+        owner_id,
+        clock,
+        account_id,
+        real_balance_cents=body.real_balance_cents,
+    )
+    if result.movement is None:
+        response.status_code = status.HTTP_200_OK
+        return AlreadyBalancedOut(
+            status="already_balanced",
+            movement=None,
+            balance_cents=result.balance_cents,
+            warnings=[],
+        )
+    return AdjustedOut(
+        status="adjusted",
+        movement=movement_out(session, owner_id, result.movement),
+        warnings=[WarningOut.of(w) for w in result.warnings],
+    )

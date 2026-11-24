@@ -570,7 +570,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** las ventanillas para arreglar, tachar y ver el historial.
   - **Commit:** `feat(001): T47 endpoints de corrección, anulación e historial`
 
-- [ ] **T48 · API de ajuste**
+- [x] **T48 · API de ajuste**
   - **Cubre:** RF-12 · CL-17 · Plan §4.3
   - **Depende de:** T45, T33
   - **Tests primero:** `tests/integration/test_adjustments_api.py`:
