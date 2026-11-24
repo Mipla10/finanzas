@@ -94,7 +94,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** un robot que, cada vez que se sube código, corre todas las pruebas y avisa si algo se rompió.
   - **Commit:** `ci(001): T6 workflow de lint y tests`
 
-- [ ] **T7 · App FastAPI mínima: `/health` y documentación según entorno**
+- [x] **T7 · App FastAPI mínima: `/health` y documentación según entorno**
   - **Cubre:** RNF-4 (excepciones), RNF-9 · Plan §4.2, §5.6
   - **Depende de:** T3
   - **Tests primero:** `tests/integration/test_app_api.py` comprueba:

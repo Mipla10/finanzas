@@ -14,6 +14,10 @@ from finanzas.db.base import make_engine
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
+# finanzas.main crea la app al importarse y exige contraseña (RNF-4).
+# Valor fijo de prueba, no secreto; los tests de config lo quitan a propósito.
+os.environ.setdefault("APP_PASSWORD", "contraseña-de-prueba-12")
+
 # Valor por defecto = .env.example (credenciales solo locales, no secretas).
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
