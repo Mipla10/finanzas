@@ -4,93 +4,18 @@ Carga en la BD real el ejemplo de plan §2.4 y exige sus valores exactos.
 """
 
 from collections.abc import Callable
-from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
-from finanzas.db.models import Account, Movement, User
-from finanzas.domain.accounts import AccountType
+from finanzas.db.models import Account, User
 from finanzas.domain.dates import FixedClock
-from finanzas.domain.movements import AdjustmentDirection, MovementType
 from finanzas.services import balances as service
-
-T = MovementType
-
-
-def load_plan_example(
-    session: Session,
-    clock: FixedClock,
-    owner: User,
-    make_account: Callable[..., Account],
-    make_movement: Callable[..., Movement],
-) -> dict[str, Account]:
-    accounts = {}
-    for name, kind, parent, initial in [
-        ("Lulo", AccountType.BANK, None, 150000000),
-        ("Ahorro", AccountType.POCKET, "Lulo", 300000000),
-        ("Nequi", AccountType.DIGITAL_WALLET, None, 20000000),
-        ("Efectivo", AccountType.CASH, None, 5000000),
-    ]:
-        accounts[name] = make_account(
-            owner,
-            kind,
-            name=name,
-            parent=accounts.get(parent or ""),
-            initial_balance_cents=initial,
-        )
-        clock.advance(timedelta(seconds=1))  # orden de creación estable
-    lulo, ahorro, nequi, cash = (
-        accounts[n] for n in ("Lulo", "Ahorro", "Nequi", "Efectivo")
-    )
-
-    def day(d: int) -> date:
-        return date(2026, 11, d)
-
-    make_movement(owner, T.INCOME, to_account=lulo, amount_cents=200000000, on=day(1))
-    m2 = make_movement(owner, from_account=nequi, amount_cents=2300000, on=day(3))
-    m2.amount_cents = 2500000  # M2 corregido (versión 2)
-    make_movement(
-        owner,
-        T.TRANSFER,
-        from_account=lulo,
-        to_account=cash,
-        amount_cents=20000000,
-        on=day(5),
-    )
-    make_movement(owner, from_account=lulo, amount_cents=700000, on=day(5))
-    make_movement(
-        owner,
-        T.TRANSFER,
-        from_account=lulo,
-        to_account=ahorro,
-        amount_cents=50000000,
-        on=day(6),
-    )
-    m6 = make_movement(owner, from_account=cash, amount_cents=8000000, on=day(10))
-    m6.voided_at = clock.now()  # M6 anulado
-    make_movement(owner, T.YIELD, to_account=ahorro, amount_cents=1234567, on=day(20))
-    make_movement(
-        owner,
-        T.ADJUSTMENT,
-        from_account=nequi,
-        amount_cents=350000,
-        adjustment_direction=AdjustmentDirection.OUT,
-        on=day(23),
-    )
-    session.flush()
-    return accounts
 
 
 def test_plan_example_gives_the_exact_hand_calculated_values(
-    db_session: Session,
-    clock: FixedClock,
-    owner_a: User,
-    make_account: Callable[..., Account],
-    make_movement: Callable[..., Movement],
+    db_session: Session, owner_a: User, month_scenario: dict[str, Account]
 ) -> None:
-    accounts = load_plan_example(
-        db_session, clock, owner_a, make_account, make_movement
-    )
+    accounts = month_scenario
 
     summary = service.get_balances(db_session, owner_a.id)
 

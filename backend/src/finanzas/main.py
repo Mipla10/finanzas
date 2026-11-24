@@ -9,7 +9,14 @@ from sqlalchemy.orm import Session
 from finanzas import __version__
 from finanzas.api.deps import require_password
 from finanzas.api.errors import install_error_handlers
-from finanzas.api.routers import accounts, categories, health, movements
+from finanzas.api.routers import (
+    accounts,
+    balances,
+    categories,
+    health,
+    merchants,
+    movements,
+)
 from finanzas.config import Settings
 from finanzas.db.base import make_engine
 from finanzas.domain.dates import SystemClock
@@ -22,6 +29,8 @@ PROTECTED_ROUTERS: list[APIRouter] = [
     accounts.router,
     categories.router,
     movements.router,
+    balances.router,
+    merchants.router,
 ]
 
 

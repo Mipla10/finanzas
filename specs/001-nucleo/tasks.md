@@ -580,7 +580,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la ventanilla para cuadrar una cuenta con el banco.
   - **Commit:** `feat(001): T48 endpoint de ajuste`
 
-- [ ] **T49 · API de saldos y comercios**
+- [x] **T49 · API de saldos y comercios**
   - **Cubre:** RF-13, RF-16 · Plan §4.3
   - **Depende de:** T42, T41, T10
   - **Tests primero:** `tests/integration/test_balances_api.py`. `GET /balances` devuelve exactamente el JSON de ejemplo del plan con los datos de §2.4, y `GET /merchants` respeta `limit`.
