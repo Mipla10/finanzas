@@ -105,7 +105,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la app ya «contesta el teléfono»: tiene una ruta para saber si está viva y una página de documentación que solo existe en tu computador.
   - **Commit:** `feat(001): T7 app mínima con health y docs solo en local`
 
-- [ ] **T8 · Contraseña única en todas las rutas**
+- [x] **T8 · Contraseña única en todas las rutas**
   - **Cubre:** RNF-4 · Plan §5.6, DT-11
   - **Depende de:** T7
   - **Tests primero:** `tests/integration/test_auth_api.py`, sobre una ruta protegida de prueba:

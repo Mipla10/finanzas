@@ -399,8 +399,10 @@ Los criterios de aceptación siguen la notación EARS:
 - **RNF-4. Acceso (test):** toda petición exige una contraseña única
   configurada fuera del repositorio, también en local. Si la contraseña
   no está configurada, el núcleo no arranca. Esta protección se
-  sustituye por cuentas de usuario en la spec 004. Excepciones, porque no
-  contienen datos:
+  sustituye por cuentas de usuario en la spec 004. La contraseña solo
+  puede contener caracteres ASCII imprimibles y sin espacios (las cabeceras
+  HTTP no admiten otros); si no cumple, el núcleo no arranca. Excepciones,
+  porque no contienen datos:
   - la comprobación de estado del servicio es siempre pública;
   - la documentación de la API y su esquema son públicos **solo en el
     entorno local** y están desactivados en producción.

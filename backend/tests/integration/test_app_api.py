@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from finanzas.config import Settings
 from finanzas.main import create_app
 
-TEST_PASSWORD = "contraseña-de-prueba-12"
+TEST_PASSWORD = "clave-de-prueba-12"
 
 
 def client_for(app_env: str) -> TestClient:

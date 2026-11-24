@@ -5,7 +5,7 @@ from pydantic import ValidationError
 
 from finanzas.config import Settings
 
-VALID_PASSWORD = "contraseña-de-prueba-12"
+VALID_PASSWORD = "clave-de-prueba-12"
 
 
 @pytest.fixture(autouse=True)
@@ -29,6 +29,23 @@ def test_password_shorter_than_12_chars_prevents_startup(
 ) -> None:
     monkeypatch.setenv("APP_PASSWORD", "corta-11chr")  # 11 caracteres
     with pytest.raises(ValidationError, match="al menos 12 caracteres"):
+        load()
+
+
+@pytest.mark.parametrize(
+    "password",
+    [
+        "contraseña-de-prueba-12",  # ñ
+        "clave-de-acción-12",  # tilde
+        "clave de prueba 12",  # espacios
+    ],
+)
+def test_password_must_be_printable_ascii_without_spaces(
+    monkeypatch: pytest.MonkeyPatch, password: str
+) -> None:
+    """Viaja en una cabecera HTTP, que solo admite ASCII (RNF-4)."""
+    monkeypatch.setenv("APP_PASSWORD", password)
+    with pytest.raises(ValidationError, match="ASCII"):
         load()
 
 

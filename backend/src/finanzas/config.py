@@ -37,9 +37,16 @@ class Settings(BaseSettings):
 
     @field_validator("app_password")
     @classmethod
-    def password_must_be_long_enough(cls, value: SecretStr) -> SecretStr:
-        if len(value.get_secret_value()) < MIN_PASSWORD_LENGTH:
+    def password_must_be_valid(cls, value: SecretStr) -> SecretStr:
+        password = value.get_secret_value()
+        if len(password) < MIN_PASSWORD_LENGTH:
             raise ValueError(
                 f"APP_PASSWORD debe tener al menos {MIN_PASSWORD_LENGTH} caracteres."
+            )
+        # Viaja en una cabecera HTTP: solo ASCII imprimible, sin espacios (! … ~).
+        if not all("!" <= char <= "~" for char in password):
+            raise ValueError(
+                "APP_PASSWORD solo puede tener caracteres ASCII imprimibles, "
+                "sin ñ, tildes ni espacios."
             )
         return value

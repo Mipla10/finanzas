@@ -945,8 +945,10 @@ class FixedClock:    construido con un instante fijo; se puede avanzar en el tes
 
 ### 5.6 Protección con contraseña única (RNF-4)
 - **Configuración:** la variable `APP_PASSWORD` se lee en `config.py`. Si
-  falta o tiene menos de 12 caracteres, `Settings` lanza un error y **la
-  app no arranca**.
+  falta, tiene menos de 12 caracteres o contiene caracteres que no sean
+  ASCII imprimibles sin espacios (`!`…`~`), `Settings` lanza un error y
+  **la app no arranca**. Motivo: viaja en una cabecera HTTP, que solo
+  admite ASCII; una «ñ» o una tilde la harían imposible de enviar.
 - **Entorno:** la variable `APP_ENV` acepta `local` o `production`, y vale
   `production` por defecto. Si alguien olvida configurarla, queda la
   opción más segura.
