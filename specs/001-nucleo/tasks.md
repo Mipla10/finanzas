@@ -332,7 +332,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** solo se puede borrar una cuenta creada por error que nunca se usó. Lo demás se conserva para el historial.
   - **Commit:** `feat(001): T27 borrar cuentas nunca usadas`
 
-- [ ] **T28 · Categorías: crear, listar y renombrar**
+- [x] **T28 · Categorías: crear, listar y renombrar**
   - **Cubre:** RF-6 · Plan §2.2
   - **Depende de:** T22, T17
   - **Tests primero:** `tests/integration/test_categories_service.py`:

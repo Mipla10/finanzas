@@ -36,6 +36,8 @@ MESSAGES: dict[str, str] = {
     "not_archived": "No está archivada.",
     "account_in_use": "La cuenta ya se usó: archívala en vez de borrarla.",
     "account_has_pockets": "La cuenta tiene bolsillos: no se puede borrar.",
+    # Categorías (RF-6)
+    "duplicate_category_name": "Ya tienes una categoría con ese nombre en esa clase.",
     # Movimientos (RF-7 a RF-11)
     "not_allowed_for_type": "Este campo no aplica a este tipo de movimiento.",
     "same_account": "La cuenta de destino debe ser distinta de la de origen.",
