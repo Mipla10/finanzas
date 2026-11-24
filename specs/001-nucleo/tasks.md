@@ -279,7 +279,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la primera vez que arranca, la app te crea como usuario y te deja las categorías básicas listas.
   - **Commit:** `feat(001): T22 usuario inicial y categorías precargadas`
 
-- [ ] **T23 · Crear y consultar cuentas**
+- [x] **T23 · Crear y consultar cuentas**
   - **Cubre:** RF-4 · CL-10, CL-13, CL-33, CL-34 · Plan §2.2, §3.5
   - **Depende de:** T18, T22
   - **Tests primero:** `tests/integration/test_accounts_service.py`:
