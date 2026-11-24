@@ -4,6 +4,7 @@ import uuid
 from datetime import date, datetime
 
 from sqlalchemy import (
+    ARRAY,
     BigInteger,
     CheckConstraint,
     Date,
@@ -187,3 +188,59 @@ Index(
 )
 Index("ix_movements_category", Movement.owner_id, Movement.category_id)
 Index("ix_movements_merchant", Movement.owner_id, Movement.merchant_key)
+
+
+class MovementVersion(Base):
+    """Una fila por CADA versión de un movimiento, incluida la 1.
+
+    Solo de inserción: nunca se actualiza ni se borra (RF-20, RNF-2).
+    """
+
+    __tablename__ = "movement_versions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    owner_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    movement_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    version_no: Mapped[int] = mapped_column(Integer)
+    # Copia completa de los datos de esa versión (el tipo nunca cambia).
+    amount_cents: Mapped[int] = mapped_column(BigInteger)
+    date: Mapped[date] = mapped_column(Date)
+    from_account_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    to_account_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    category_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    merchant: Mapped[str | None] = mapped_column(String(80))
+    merchant_key: Mapped[str | None] = mapped_column(String(80))
+    note: Mapped[str | None] = mapped_column(String(500))
+    changed_fields: Mapped[list[str]] = mapped_column(ARRAY(String))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        UniqueConstraint("movement_id", "version_no"),
+        CheckConstraint("version_no >= 1", name="version_positive"),
+        CheckConstraint("amount_cents > 0", name="amount_positive"),
+        # Todo lo que referencia es del MISMO dueño (RNF-5, plan §2.1).
+        ForeignKeyConstraint(
+            ["movement_id", "owner_id"],
+            ["movements.id", "movements.owner_id"],
+            name="fk_movement_versions_movement_owner",
+        ),
+        ForeignKeyConstraint(
+            ["from_account_id", "owner_id"],
+            ["accounts.id", "accounts.owner_id"],
+            name="fk_movement_versions_from_account_owner",
+        ),
+        ForeignKeyConstraint(
+            ["to_account_id", "owner_id"],
+            ["accounts.id", "accounts.owner_id"],
+            name="fk_movement_versions_to_account_owner",
+        ),
+        ForeignKeyConstraint(
+            ["category_id", "owner_id"],
+            ["categories.id", "categories.owner_id"],
+            name="fk_movement_versions_category_owner",
+        ),
+        # Para la regla «nunca usada» al borrar cuentas y categorías (plan §3.8).
+        Index("ix_movement_versions_from", "owner_id", "from_account_id"),
+        Index("ix_movement_versions_to", "owner_id", "to_account_id"),
+        Index("ix_movement_versions_category", "owner_id", "category_id"),
+    )

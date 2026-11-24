@@ -26,12 +26,18 @@ TEST_DATABASE_URL = os.environ.get(
 
 
 @pytest.fixture(scope="session")
-def db_engine() -> Iterator[Engine]:
-    """Aplica las migraciones a la BD de pruebas una vez por corrida."""
+def alembic_config() -> Config:
+    """Configuración de Alembic apuntando a la BD de pruebas."""
     config = Config(str(BACKEND_DIR / "alembic.ini"))
     config.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
     config.set_main_option("sqlalchemy.url", TEST_DATABASE_URL)
-    command.upgrade(config, "head")
+    return config
+
+
+@pytest.fixture(scope="session")
+def db_engine(alembic_config: Config) -> Iterator[Engine]:
+    """Aplica las migraciones a la BD de pruebas una vez por corrida."""
+    command.upgrade(alembic_config, "head")
     engine = make_engine(TEST_DATABASE_URL)
     yield engine
     engine.dispose()

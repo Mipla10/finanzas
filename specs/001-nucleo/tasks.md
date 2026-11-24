@@ -168,7 +168,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** se crea la tabla de movimientos, que ya impide guardar uno «mal armado».
   - **Commit:** `feat(001): T13 tabla movements con restricciones por tipo`
 
-- [ ] **T14 · Tabla `movement_versions`**
+- [x] **T14 · Tabla `movement_versions`**
   - **Cubre:** RF-20, RNF-2, RNF-5 · Plan §2.2
   - **Depende de:** T13
   - **Tests primero:** `tests/integration/test_schema_versions.py`. Se rechaza un `(movement_id, version_no)` duplicado y una versión que apunta a un movimiento de otro dueño. `tests/integration/test_migrations.py` hace `downgrade base` y `upgrade head` de ida y vuelta.
