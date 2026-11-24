@@ -116,3 +116,53 @@ class MovementListOut(BaseModel):
     items: list[MovementOut]
     totals: TotalsOut
     page: PageOut
+
+
+class MovementCorrection(RequestModel):
+    """Solo cambia lo que se envía; `null` borra un dato opcional (RF-19).
+
+    `type` se admite solo para rechazar con claridad un cambio de tipo (CL-21).
+    """
+
+    type: MovementType | None = None
+    amount_cents: Cents | None = None
+    date: dt.date | None = None
+    from_account_id: uuid.UUID | None = None
+    to_account_id: uuid.UUID | None = None
+    category_id: uuid.UUID | None = None
+    merchant: str | None = None
+    note: str | None = None
+
+
+class CorrectionOut(BaseModel):
+    movement: MovementOut
+    changed: bool  # false: no hubo cambios reales y no se creó versión
+    warnings: list[WarningOut]
+
+
+class VoidRequest(RequestModel):
+    reason: str | None = None
+
+
+class VersionOut(BaseModel):
+    version: int
+    created_at: BogotaDatetime
+    changed_fields: list[str]
+    amount_cents: int
+    date: dt.date
+    from_account: NamedRef | None
+    to_account: NamedRef | None
+    category: NamedRef | None
+    merchant: str | None
+    note: str | None
+
+
+class VoidedOut(BaseModel):
+    at: BogotaDatetime
+    reason: str | None
+
+
+class HistoryOut(BaseModel):
+    movement_id: uuid.UUID
+    versions: list[VersionOut]
+    voided: VoidedOut | None

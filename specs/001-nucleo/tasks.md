@@ -558,7 +558,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la ventanilla para buscar movimientos.
   - **Commit:** `feat(001): T46 endpoint de listado`
 
-- [ ] **T47 · API para corregir, anular e historial**
+- [x] **T47 · API para corregir, anular e historial**
   - **Cubre:** RF-19, RF-20, RF-21 · Plan §4.3
   - **Depende de:** T45, T36, T38
   - **Tests primero:** `tests/integration/test_corrections_api.py`:

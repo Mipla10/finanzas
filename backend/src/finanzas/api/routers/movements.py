@@ -4,17 +4,24 @@ import uuid
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Body, Query, status
 from sqlalchemy.orm import Session
 
 from finanzas.api.deps import ClockDep, OwnerDep, SessionDep
 from finanzas.api.schemas.movements import (
+    CorrectionOut,
+    HistoryOut,
+    MovementCorrection,
     MovementCreate,
     MovementListOut,
     MovementOut,
     MovementWithWarnings,
+    NamedRef,
     PageOut,
     TotalsOut,
+    VersionOut,
+    VoidedOut,
+    VoidRequest,
     WarningOut,
 )
 from finanzas.db.models import Movement
@@ -112,4 +119,74 @@ def get_movement(
 ) -> MovementOut:
     return movement_out(
         session, owner_id, service.get_movement(session, owner_id, movement_id)
+    )
+
+
+# Nombre del campo en el JSON → nombre del parámetro en el servicio.
+_CORRECTION_PARAMS = {"type": "movement_type", "date": "on"}
+
+
+@router.patch("/{movement_id}", summary="Corregir movimiento")
+def correct_movement(
+    movement_id: uuid.UUID,
+    body: MovementCorrection,
+    session: SessionDep,
+    owner_id: OwnerDep,
+    clock: ClockDep,
+) -> CorrectionOut:
+    # Solo lo que vino en el JSON: lo ausente no cambia; null sí cuenta.
+    changes = {
+        _CORRECTION_PARAMS.get(name, name): getattr(body, name)
+        for name in body.model_fields_set
+    }
+    result = service.correct_movement(session, owner_id, clock, movement_id, **changes)
+    return CorrectionOut(
+        movement=movement_out(session, owner_id, result.movement),
+        changed=result.changed,
+        warnings=[WarningOut.of(w) for w in result.warnings],
+    )
+
+
+@router.post("/{movement_id}/void", summary="Anular movimiento")
+def void_movement(
+    movement_id: uuid.UUID,
+    session: SessionDep,
+    owner_id: OwnerDep,
+    clock: ClockDep,
+    body: Annotated[VoidRequest | None, Body()] = None,
+) -> MovementWithWarnings:
+    reason = body.reason if body is not None else None
+    result = service.void_movement(session, owner_id, clock, movement_id, reason=reason)
+    return with_warnings(session, owner_id, result.movement, result.warnings)
+
+
+@router.get("/{movement_id}/history", summary="Historial de versiones")
+def get_history(
+    movement_id: uuid.UUID, session: SessionDep, owner_id: OwnerDep
+) -> HistoryOut:
+    history = service.get_history(session, owner_id, movement_id)
+
+    def ref(item: service.NamedRef | None) -> NamedRef | None:
+        return NamedRef(id=item.id, name=item.name) if item is not None else None
+
+    return HistoryOut(
+        movement_id=history.movement_id,
+        versions=[
+            VersionOut(
+                version=v.version,
+                created_at=v.created_at,
+                changed_fields=v.changed_fields,
+                amount_cents=v.amount_cents,
+                date=v.date,
+                from_account=ref(v.from_account),
+                to_account=ref(v.to_account),
+                category=ref(v.category),
+                merchant=v.merchant,
+                note=v.note,
+            )
+            for v in history.versions
+        ],
+        voided=VoidedOut(at=history.voided.at, reason=history.voided.reason)
+        if history.voided is not None
+        else None,
     )
