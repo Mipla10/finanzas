@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, FastAPI
 
 from finanzas import __version__
 from finanzas.api.deps import require_password
+from finanzas.api.errors import install_error_handlers
 from finanzas.api.routers import health
 from finanzas.config import Settings
 
@@ -31,6 +32,7 @@ def create_app(
         openapi_url="/openapi.json" if is_local else None,
     )
     app.state.settings = settings
+    install_error_handlers(app)
 
     # Público: solo /health.
     app.include_router(health.router, prefix=API_PREFIX)

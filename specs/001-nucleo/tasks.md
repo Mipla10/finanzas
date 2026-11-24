@@ -117,7 +117,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** se pone la cerradura: sin la contraseña nadie entra, salvo a la ruta de «estoy vivo».
   - **Commit:** `feat(001): T8 proteger la api con contraseña única`
 
-- [ ] **T9 · Errores de dominio y formato estándar**
+- [x] **T9 · Errores de dominio y formato estándar**
   - **Cubre:** RF-22, RNF-7 · Plan §4.4
   - **Depende de:** T8
   - **Tests primero:** `tests/integration/test_errors_api.py`. Rutas de prueba lanzan `InvalidData`, `NotFound` y `Conflict`, y se comprueba que la respuesta es `422`, `404` y `409` con el formato `{"error": {type, field, message, details}}` y un mensaje del catálogo `domain/messages.py`.

@@ -32,7 +32,7 @@ def test_without_header_is_rejected() -> None:
     response = make_client().get(f"{API_PREFIX}/probe")
     assert response.status_code == 401
     assert response.headers["WWW-Authenticate"] == "Bearer"
-    assert "contraseña" in response.json()["detail"]  # mensaje en español
+    assert "contraseña" in response.json()["error"]["message"]  # en español
 
 
 def test_with_wrong_password_is_rejected() -> None:

@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from finanzas.config import Settings
+from finanzas.domain.messages import render
 
 # auto_error=False: los errores los damos nosotros, en español.
 # Además, HTTPBearer añade el botón «Authorize» en /docs.
@@ -27,6 +28,6 @@ def require_password(
     if not hmac.compare_digest(given, expected):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Falta la contraseña o es incorrecta.",
+            detail=render("unauthorized"),
             headers={"WWW-Authenticate": "Bearer"},
         )
