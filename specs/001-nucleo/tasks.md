@@ -368,7 +368,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** ya se pueden registrar gastos e ingresos.
   - **Commit:** `feat(001): T30 registrar gastos e ingresos`
 
-- [ ] **T31 · Crear transferencia y rendimiento**
+- [x] **T31 · Crear transferencia y rendimiento**
   - **Cubre:** RF-10, RF-11 · CL-3, CL-4, CL-5, CL-12 · Plan §3.5
   - **Depende de:** T30, T24
   - **Tests primero:** `tests/integration/test_movements_service.py`:

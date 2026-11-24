@@ -330,3 +330,195 @@ def test_resources_of_another_user_look_like_they_do_not_exist(
         borrowed,
         lambda: spend(db_session, owner_a, clock, **values),
     )
+
+
+# --- T31: transferencias y rendimientos (RF-10, RF-11, CL-3, CL-4, CL-5, CL-12) ---
+
+TRANSFER, YIELD = MovementType.TRANSFER, MovementType.YIELD
+
+
+def balances(session: Session, owner: User) -> dict[Any, int]:
+    from finanzas.db.repositories.balances import balances_for_owner
+
+    return balances_for_owner(session, owner.id)
+
+
+def test_cl_3_atm_withdrawal_with_fee(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    bank: Account,
+    make_account: Callable[..., Account],
+    make_category: Callable[..., Category],
+) -> None:
+    cash = make_account(owner_a, name="Efectivo Prueba", initial_balance_cents=0)
+    fees = make_category(owner_a, CategoryKind.EXPENSE, name="Comisiones Prueba")
+    before = balances(db_session, owner_a)
+
+    service.create_movement(
+        db_session,
+        owner_a.id,
+        clock,
+        movement_type=TRANSFER,
+        amount_cents=20000000,
+        from_account_id=bank.id,
+        to_account_id=cash.id,
+    )
+    spend(
+        db_session,
+        owner_a,
+        clock,
+        amount_cents=700000,
+        from_account_id=bank.id,
+        category_id=fees.id,
+    )
+
+    after = balances(db_session, owner_a)
+    assert before[bank.id] - after[bank.id] == 20700000
+    assert after[cash.id] - before[cash.id] == 20000000
+    expenses = db_session.scalars(
+        select(Movement.amount_cents).where(Movement.type == EXPENSE)
+    ).all()
+    assert expenses == [700000]  # solo la comisión es gasto
+
+
+def test_cl_4_transfer_between_pockets_keeps_bank_subtotal(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    make_account: Callable[..., Account],
+) -> None:
+    from finanzas.domain.accounts import AccountType
+
+    lulo = make_account(owner_a, name="Lulo Prueba", initial_balance_cents=100)
+    ahorro = make_account(
+        owner_a,
+        AccountType.POCKET,
+        name="Ahorro Prueba",
+        parent=lulo,
+        initial_balance_cents=5000,
+    )
+    viajes = make_account(
+        owner_a,
+        AccountType.POCKET,
+        name="Viajes Prueba",
+        parent=lulo,
+        initial_balance_cents=0,
+    )
+
+    def subtotal() -> int:
+        current = balances(db_session, owner_a)
+        return current[lulo.id] + current[ahorro.id] + current[viajes.id]
+
+    before = subtotal()
+    service.create_movement(
+        db_session,
+        owner_a.id,
+        clock,
+        movement_type=TRANSFER,
+        amount_cents=3000,
+        from_account_id=ahorro.id,
+        to_account_id=viajes.id,
+    )
+    assert subtotal() == before
+    assert balances(db_session, owner_a)[viajes.id] == 3000
+
+
+def test_cl_5_transfer_to_the_same_account_is_rejected(
+    db_session: Session, clock: FixedClock, owner_a: User, bank: Account
+) -> None:
+    expect(
+        InvalidData,
+        "same_account",
+        "to_account_id",
+        lambda: service.create_movement(
+            db_session,
+            owner_a.id,
+            clock,
+            movement_type=TRANSFER,
+            amount_cents=1,
+            from_account_id=bank.id,
+            to_account_id=bank.id,
+        ),
+    )
+
+
+def test_cl_12_yield_with_cents_adds_exactly(
+    db_session: Session, clock: FixedClock, owner_a: User, bank: Account
+) -> None:
+    before = balances(db_session, owner_a)[bank.id]
+    movement = service.create_movement(
+        db_session,
+        owner_a.id,
+        clock,
+        movement_type=YIELD,
+        amount_cents=123456,
+        to_account_id=bank.id,
+    )
+    assert (movement.category_id, movement.from_account_id) == (None, None)
+    assert balances(db_session, owner_a)[bank.id] - before == 123456
+
+
+@pytest.mark.parametrize("movement_type", [TRANSFER, YIELD])
+def test_transfer_and_yield_reject_a_category(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    bank: Account,
+    food: Category,
+    make_account: Callable[..., Account],
+    movement_type: MovementType,
+) -> None:
+    to_account = make_account(owner_a)
+    from_account = bank.id if movement_type is TRANSFER else None
+    expect(
+        InvalidData,
+        "not_allowed_for_type",
+        "category_id",
+        lambda: service.create_movement(
+            db_session,
+            owner_a.id,
+            clock,
+            movement_type=movement_type,
+            amount_cents=1,
+            from_account_id=from_account,
+            to_account_id=to_account.id,
+            category_id=food.id,
+        ),
+    )
+
+
+def test_destination_account_is_checked_too(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    owner_b: User,
+    bank: Account,
+    make_account: Callable[..., Account],
+) -> None:
+    archived = make_account(owner_a, name="Archivada Prueba")
+    archived.archived_at = clock.now()
+    late = make_account(owner_a, name="Tardía Prueba", start_date=date(2026, 11, 20))
+    theirs = make_account(owner_b)
+    db_session.flush()
+
+    def transfer(to_id: Any, on: date | None = None) -> Movement:
+        return service.create_movement(
+            db_session,
+            owner_a.id,
+            clock,
+            movement_type=TRANSFER,
+            amount_cents=1,
+            from_account_id=bank.id,
+            to_account_id=to_id,
+            on=on,
+        )
+
+    expect(Conflict, "account_archived", "to_account_id", lambda: transfer(archived.id))
+    expect(NotFound, "resource_not_found", "to_account_id", lambda: transfer(theirs.id))
+    expect(
+        InvalidData,
+        "date_before_account_start",
+        "date",
+        lambda: transfer(late.id, on=date(2026, 11, 10)),
+    )
