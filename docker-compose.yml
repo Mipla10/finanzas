@@ -1,4 +1,6 @@
-# Entorno local (plan 001 §6.1). Uso: docker compose up -d db
+# Entorno local (plan 001 §6.1).
+#   Todo en Docker:  docker compose up --build
+#   Solo la BD:      docker compose up -d db  (y la API con uv, con recarga)
 services:
   db:
     image: postgres:16
@@ -18,6 +20,18 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build: ./backend
+    env_file: .env
+    environment:
+      # Dentro de Docker la BD no está en localhost sino en el servicio `db`.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-finanzas}:${POSTGRES_PASSWORD:-finanzas}@db:5432/${POSTGRES_DB:-finanzas}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:

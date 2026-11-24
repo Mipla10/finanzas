@@ -640,7 +640,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** comprobar que la app responde rápido aunque tengas miles de movimientos.
   - **Commit:** `test(001): T54 prueba de rendimiento`
 
-- [ ] **T55 · Dockerfile y servicio `api` en Compose**
+- [x] **T55 · Dockerfile y servicio `api` en Compose**
   - **Cubre:** Plan §6.1, §6.4, §6.5
   - **Depende de:** T50
   - **Tests primero:** no aplica a pytest. La comprobación es un smoke test manual: tras `docker compose up --build`, `curl localhost:8000/api/v1/health` responde `200`.

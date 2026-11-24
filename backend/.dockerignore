@@ -1,0 +1,11 @@
+# Lo que nunca entra a la imagen: secretos, entornos locales y cachés.
+.env
+.env.*
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+tests/
