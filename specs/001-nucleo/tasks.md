@@ -310,7 +310,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** se puede cambiar el nombre de una cuenta, y corregir su saldo inicial solo si aún no se usó.
   - **Commit:** `feat(001): T25 editar cuentas`
 
-- [ ] **T26 · Archivar y desarchivar cuentas**
+- [x] **T26 · Archivar y desarchivar cuentas**
   - **Cubre:** RF-5 · CL-28, CL-29, CL-30 · Plan §4.2
   - **Depende de:** T24, T25
   - **Tests primero:** `tests/integration/test_accounts_service.py`:

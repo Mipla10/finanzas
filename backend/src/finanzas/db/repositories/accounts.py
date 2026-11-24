@@ -60,3 +60,14 @@ def list_owned(
     if not include_archived:
         query = query.where(Account.archived_at.is_(None))
     return list(session.scalars(query.order_by(Account.created_at, Account.name_key)))
+
+
+def active_pockets(
+    session: Session, owner_id: uuid.UUID, bank_id: uuid.UUID
+) -> list[Account]:
+    query = select(Account).where(
+        Account.owner_id == owner_id,
+        Account.parent_id == bank_id,
+        Account.archived_at.is_(None),
+    )
+    return list(session.scalars(query.order_by(Account.name_key)))

@@ -446,3 +446,130 @@ def test_type_and_parent_cannot_be_changed(
         service.update_account(
             db_session, owner_a.id, clock, lulo.id, **{forbidden: None}
         )
+
+
+# --- T26: archivar y desarchivar (RF-5, CL-28, CL-29, CL-30) ---
+
+
+def test_archive_with_zero_balance_and_unarchive_back(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    make_movement: Callable[..., Any],
+) -> None:
+    nequi = create(db_session, owner_a, clock, name="Nequi", initial_balance_cents=1000)
+    make_movement(owner_a, from_account=nequi, amount_cents=1000)  # queda en 0
+    archived = service.archive_account(db_session, owner_a.id, clock, nequi.id)
+    assert archived.archived_at == clock.now()
+    assert nequi not in service.list_accounts(db_session, owner_a.id)
+    active = service.unarchive_account(db_session, owner_a.id, nequi.id)
+    assert active.archived_at is None
+
+
+def test_cl_28_archiving_with_nonzero_balance_is_a_conflict(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    nequi = create(db_session, owner_a, clock, name="Nequi", initial_balance_cents=1)
+    expect(
+        Conflict,
+        "account_balance_not_zero",
+        None,
+        lambda: service.archive_account(db_session, owner_a.id, clock, nequi.id),
+    )
+
+
+def test_cl_29_bank_with_active_pockets_names_them(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    for name in ("Ahorro", "Viajes"):
+        create(
+            db_session,
+            owner_a,
+            clock,
+            name=name,
+            account_type=AccountType.POCKET,
+            parent_id=lulo.id,
+        )
+    with pytest.raises(Conflict) as caught:
+        service.archive_account(db_session, owner_a.id, clock, lulo.id)
+    assert caught.value.code == "account_has_active_pockets"
+    assert "Ahorro" in caught.value.message
+    assert "Viajes" in caught.value.message
+
+
+def test_bank_whose_pockets_are_archived_can_be_archived(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    ahorro = create(
+        db_session,
+        owner_a,
+        clock,
+        name="Ahorro",
+        account_type=AccountType.POCKET,
+        parent_id=lulo.id,
+    )
+    service.archive_account(db_session, owner_a.id, clock, ahorro.id)
+    assert service.archive_account(db_session, owner_a.id, clock, lulo.id).archived_at
+
+
+def test_cl_30_unarchiving_pocket_of_archived_bank_is_a_conflict(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    ahorro = create(
+        db_session,
+        owner_a,
+        clock,
+        name="Ahorro",
+        account_type=AccountType.POCKET,
+        parent_id=lulo.id,
+    )
+    service.archive_account(db_session, owner_a.id, clock, ahorro.id)
+    service.archive_account(db_session, owner_a.id, clock, lulo.id)
+    expect(
+        Conflict,
+        "parent_archived",
+        "parent_id",
+        lambda: service.unarchive_account(db_session, owner_a.id, ahorro.id),
+    )
+    service.unarchive_account(db_session, owner_a.id, lulo.id)  # primero el banco
+    assert (
+        service.unarchive_account(db_session, owner_a.id, ahorro.id).archived_at is None
+    )
+
+
+def test_archiving_twice_or_unarchiving_active_is_a_conflict(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    nequi = create(db_session, owner_a, clock, name="Nequi")
+    expect(
+        Conflict,
+        "not_archived",
+        None,
+        lambda: service.unarchive_account(db_session, owner_a.id, nequi.id),
+    )
+    service.archive_account(db_session, owner_a.id, clock, nequi.id)
+    expect(
+        Conflict,
+        "already_archived",
+        None,
+        lambda: service.archive_account(db_session, owner_a.id, clock, nequi.id),
+    )
+
+
+@pytest.mark.parametrize("action", ["archive", "unarchive"])
+def test_archiving_another_users_account_looks_like_it_does_not_exist(
+    db_session: Session, clock: FixedClock, owner_a: User, owner_b: User, action: str
+) -> None:
+    nequi = create(db_session, owner_a, clock, name="Nequi")
+    call = {
+        "archive": lambda: service.archive_account(
+            db_session, owner_b.id, clock, nequi.id
+        ),
+        "unarchive": lambda: service.unarchive_account(
+            db_session, owner_b.id, nequi.id
+        ),
+    }[action]
+    expect(NotFound, "resource_not_found", "account_id", call)

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from finanzas.db.models import Account
 from finanzas.db.repositories import accounts as repo
+from finanzas.db.repositories.balances import balances_for_owner
 from finanzas.domain.accounts import AccountType
 from finanzas.domain.dates import Clock, validate_start_date
 from finanzas.domain.errors import Conflict, InvalidData, NotFound
@@ -125,5 +126,42 @@ def update_account(
     if start_date is not None:
         account.start_date = validate_start_date(start_date, today=clock.today())
 
+    session.commit()
+    return account
+
+
+def archive_account(
+    session: Session, owner_id: uuid.UUID, clock: Clock, account_id: uuid.UUID
+) -> Account:
+    """Archiva (RF-5): ya no admite movimientos nuevos; su historial queda intacto.
+
+    Solo con saldo en cero (CL-28) y sin bolsillos activos (CL-29).
+    """
+    account = get_account(session, owner_id, account_id)
+    if account.archived_at is not None:
+        raise Conflict("already_archived")
+    pockets = repo.active_pockets(session, owner_id, account.id)
+    if pockets:
+        names = ", ".join(pocket.name for pocket in pockets)
+        raise Conflict("account_has_active_pockets", pockets=names)
+    if balances_for_owner(session, owner_id, [account.id])[account.id] != 0:
+        raise Conflict("account_balance_not_zero")
+    account.archived_at = clock.now()
+    session.commit()
+    return account
+
+
+def unarchive_account(
+    session: Session, owner_id: uuid.UUID, account_id: uuid.UUID
+) -> Account:
+    """Vuelve a aceptar movimientos. Un bolsillo exige su banco activo (CL-30)."""
+    account = get_account(session, owner_id, account_id)
+    if account.archived_at is None:
+        raise Conflict("not_archived")
+    if account.parent_id is not None:
+        parent = get_account(session, owner_id, account.parent_id)
+        if parent.archived_at is not None:
+            raise Conflict("parent_archived", field="parent_id")
+    account.archived_at = None
     session.commit()
     return account

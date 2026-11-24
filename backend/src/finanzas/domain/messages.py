@@ -30,6 +30,10 @@ MESSAGES: dict[str, str] = {
     "account_has_movements": (
         "La cuenta ya tiene movimientos: corrige su saldo con un ajuste."
     ),
+    "account_balance_not_zero": "Solo se puede archivar una cuenta con saldo en cero.",
+    "account_has_active_pockets": "Primero archiva sus bolsillos activos: {pockets}.",
+    "already_archived": "Ya está archivada.",
+    "not_archived": "No está archivada.",
     # Movimientos (RF-7 a RF-11)
     "not_allowed_for_type": "Este campo no aplica a este tipo de movimiento.",
     "same_account": "La cuenta de destino debe ser distinta de la de origen.",
