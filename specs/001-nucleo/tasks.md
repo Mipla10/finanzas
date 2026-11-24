@@ -204,7 +204,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la regla que asegura que todo el dinero son centavos enteros, sin decimales que se pierdan.
   - **Commit:** `feat(001): T16 validar montos en centavos`
 
-- [ ] **T17 · Normalización de textos (`domain/text.py`)**
+- [x] **T17 · Normalización de textos (`domain/text.py`)**
   - **Cubre:** RF-13 · CL-24, CL-33 · Plan §5.2, §5.3
   - **Depende de:** T9
   - **Tests primero:** `tests/unit/test_text.py`:
