@@ -229,7 +229,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** las reglas de qué fechas son válidas: nada del futuro ni de antes de que existiera la cuenta.
   - **Commit:** `feat(001): T18 reglas de fecha`
 
-- [ ] **T19 · Forma por tipo y diff de versiones (`domain/movements.py`)**
+- [x] **T19 · Forma por tipo y diff de versiones (`domain/movements.py`)**
   - **Cubre:** RF-7 a RF-11, RF-19 · CL-5 · Plan §2.2 (tabla de forma), §3.6
   - **Depende de:** T16, T17
   - **Tests primero:** `tests/unit/test_movement_rules.py`:

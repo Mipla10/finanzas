@@ -22,6 +22,10 @@ MESSAGES: dict[str, str] = {
         "La fecha es anterior al inicio de la cuenta {account} ({start})."
     ),
     "start_date_in_future": "La fecha de inicio no puede ser futura.",
+    # Movimientos (RF-7 a RF-11)
+    "not_allowed_for_type": "Este campo no aplica a este tipo de movimiento.",
+    "same_account": "La cuenta de destino debe ser distinta de la de origen.",
+    "category_wrong_kind": "La categoría no es de la clase correcta para este tipo.",
     # Validación de formato (traducción de los errores de Pydantic, T10)
     "required": "Este campo es obligatorio.",
     "int_type": "Debe ser un número entero.",
