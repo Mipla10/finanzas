@@ -2,7 +2,7 @@
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -368,3 +368,84 @@ def void_movement(
     warnings = warnings_for(session, owner_id, accounts)
     session.commit()
     return MovementResult(movement, warnings)
+
+
+# --- Historial (RF-20, plan §3.6) ---
+
+
+@dataclass(frozen=True)
+class NamedRef:
+    id: uuid.UUID
+    name: str
+
+
+@dataclass(frozen=True)
+class VersionView:
+    version: int
+    created_at: datetime
+    changed_fields: list[str]
+    amount_cents: int
+    date: date
+    from_account: NamedRef | None
+    to_account: NamedRef | None
+    category: NamedRef | None
+    merchant: str | None
+    note: str | None
+
+
+@dataclass(frozen=True)
+class VoidInfo:
+    at: datetime
+    reason: str | None
+
+
+@dataclass(frozen=True)
+class MovementHistory:
+    movement_id: uuid.UUID
+    versions: list[VersionView]
+    voided: VoidInfo | None
+
+
+def get_history(
+    session: Session, owner_id: uuid.UUID, movement_id: uuid.UUID
+) -> MovementHistory:
+    """Todas las versiones en orden y, al final, la anulación si la hay.
+
+    Cuentas y categorías se muestran con su nombre ACTUAL (decisión C-5).
+    """
+    movement = movements_repo.get_owned(session, owner_id, movement_id)
+    if movement is None:
+        raise NotFound("resource_not_found", field="movement_id")
+    versions = movements_repo.versions_of(session, owner_id, movement.id)
+    ids = {
+        ref
+        for v in versions
+        for ref in (v.from_account_id, v.to_account_id, v.category_id)
+        if ref is not None
+    }
+    names = movements_repo.names_of(session, owner_id, ids)
+
+    def ref(item_id: uuid.UUID | None) -> NamedRef | None:
+        return NamedRef(item_id, names[item_id]) if item_id is not None else None
+
+    views = [
+        VersionView(
+            version=v.version_no,
+            created_at=v.created_at,
+            changed_fields=list(v.changed_fields),
+            amount_cents=v.amount_cents,
+            date=v.date,
+            from_account=ref(v.from_account_id),
+            to_account=ref(v.to_account_id),
+            category=ref(v.category_id),
+            merchant=v.merchant,
+            note=v.note,
+        )
+        for v in versions
+    ]
+    voided = (
+        VoidInfo(movement.voided_at, movement.void_reason)
+        if movement.voided_at is not None
+        else None
+    )
+    return MovementHistory(movement.id, views, voided)

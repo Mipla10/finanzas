@@ -452,7 +452,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** «tachar» un movimiento: deja de contar, pero sigue visible.
   - **Commit:** `feat(001): T37 anular movimientos`
 
-- [ ] **T38 · Historial**
+- [x] **T38 · Historial**
   - **Cubre:** RF-20, RNF-2 · Plan §3.6
   - **Depende de:** T34, T37
   - **Tests primero:** `tests/integration/test_history_service.py`:
