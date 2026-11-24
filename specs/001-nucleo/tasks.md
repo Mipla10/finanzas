@@ -291,7 +291,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** ya se pueden dar de alta Lulo, sus bolsillos, Nequi y el efectivo.
   - **Commit:** `feat(001): T23 crear y consultar cuentas`
 
-- [ ] **T24 · Consulta SQL de saldos**
+- [x] **T24 · Consulta SQL de saldos**
   - **Cubre:** RF-15 · Plan §3.1, DT-1
   - **Depende de:** T20, T23
   - **Tests primero:** `tests/integration/test_balance_property.py`. En 200 escenarios aleatorios con semilla fija, el saldo SQL coincide con el saldo puro de T20, y no incluye movimientos de otro dueño.
