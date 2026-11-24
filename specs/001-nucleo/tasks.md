@@ -547,7 +547,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la ventanilla para registrar un movimiento y verlo.
   - **Commit:** `feat(001): T45 endpoints crear y ver movimiento`
 
-- [ ] **T46 · API para listar movimientos**
+- [x] **T46 · API para listar movimientos**
   - **Cubre:** RF-17 · Plan §4.3, §5.1
   - **Depende de:** T45, T40
   - **Tests primero:** `tests/integration/test_list_api.py`:

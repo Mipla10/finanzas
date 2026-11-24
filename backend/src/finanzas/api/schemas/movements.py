@@ -95,3 +95,24 @@ class WarningOut(BaseModel):
 class MovementWithWarnings(BaseModel):
     movement: MovementOut
     warnings: list[WarningOut]
+
+
+class TotalsOut(BaseModel):
+    """Totales del filtro completo, no solo de la página (RF-17)."""
+
+    income_cents: int  # incluye los rendimientos
+    yield_cents: int
+    expense_cents: int
+    net_cents: int
+
+
+class PageOut(BaseModel):
+    limit: int
+    offset: int
+    total_items: int
+
+
+class MovementListOut(BaseModel):
+    items: list[MovementOut]
+    totals: TotalsOut
+    page: PageOut

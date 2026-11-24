@@ -1,19 +1,25 @@
 """Endpoints de movimientos (RF-7 a RF-11, RF-18, plan §4.2)."""
 
 import uuid
+from datetime import date
+from typing import Annotated
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 from sqlalchemy.orm import Session
 
 from finanzas.api.deps import ClockDep, OwnerDep, SessionDep
 from finanzas.api.schemas.movements import (
     MovementCreate,
+    MovementListOut,
     MovementOut,
     MovementWithWarnings,
+    PageOut,
+    TotalsOut,
     WarningOut,
 )
 from finanzas.db.models import Movement
 from finanzas.domain.balances import BalanceWarning
+from finanzas.domain.movements import MovementType
 from finanzas.services import movements as service
 
 router = APIRouter(prefix="/movements", tags=["movimientos"])
@@ -57,6 +63,47 @@ def create_movement(
         note=body.note,
     )
     return with_warnings(session, owner_id, result.movement, result.warnings)
+
+
+@router.get("", summary="Listar y filtrar movimientos, con totales")
+def list_movements(
+    session: SessionDep,
+    owner_id: OwnerDep,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    account_id: Annotated[list[uuid.UUID] | None, Query()] = None,
+    category_id: Annotated[list[uuid.UUID] | None, Query()] = None,
+    type: Annotated[list[MovementType] | None, Query()] = None,
+    include_voided: bool = False,
+    limit: Annotated[int, Query(ge=1, le=service.MAX_LIMIT)] = service.DEFAULT_LIMIT,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> MovementListOut:
+    page = service.list_movements(
+        session,
+        owner_id,
+        date_from=date_from,
+        date_to=date_to,
+        account_ids=account_id,
+        category_ids=category_id,
+        types=type,
+        include_voided=include_voided,
+        limit=limit,
+        offset=offset,
+    )
+    names = service.names_for(session, owner_id, page.items)
+    t = page.totals
+    return MovementListOut(
+        items=[MovementOut.of(m, names) for m in page.items],
+        totals=TotalsOut(
+            income_cents=t.income_cents,
+            yield_cents=t.yield_cents,
+            expense_cents=t.expense_cents,
+            net_cents=t.net_cents,
+        ),
+        page=PageOut(
+            limit=page.limit, offset=page.offset, total_items=page.total_items
+        ),
+    )
 
 
 @router.get("/{movement_id}", summary="Ver movimiento")
