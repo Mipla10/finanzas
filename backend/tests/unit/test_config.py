@@ -77,3 +77,12 @@ def test_app_env_rejects_other_values(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_ENV", "staging")
     with pytest.raises(ValidationError):
         load()
+
+
+def test_missing_database_url_prevents_startup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("APP_PASSWORD", VALID_PASSWORD)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    with pytest.raises(ValidationError, match="database_url"):
+        load()

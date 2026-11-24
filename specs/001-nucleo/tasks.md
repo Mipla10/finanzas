@@ -268,7 +268,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
 
 ### 3b. Servicios (con base de datos)
 
-- [ ] **T22 · Usuario inicial y categorías precargadas**
+- [x] **T22 · Usuario inicial y categorías precargadas**
   - **Cubre:** RF-3 · Plan §5.4
   - **Depende de:** T15
   - **Tests primero:** `tests/integration/test_bootstrap_service.py`:

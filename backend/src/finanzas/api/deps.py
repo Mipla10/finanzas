@@ -1,6 +1,7 @@
 """Dependencias compartidas de la API (plan §1.2)."""
 
 import hmac
+import uuid
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -31,3 +32,13 @@ def require_password(
             detail=render("unauthorized"),
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+def get_owner_id(request: Request) -> uuid.UUID:
+    """Dueño de los datos de la petición (plan §5.4).
+
+    Hasta la spec 004 es el único usuario, sembrado al arrancar. Los servicios
+    siempre reciben owner_id; los tests de aislamiento lo sustituyen.
+    """
+    owner_id: uuid.UUID = request.app.state.owner_id
+    return owner_id

@@ -31,6 +31,8 @@ TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql+psycopg://finanzas:finanzas@localhost:5432/finanzas_test",
 )
+# La app (Settings) también exige DATABASE_URL: en los tests, la BD de pruebas.
+os.environ.setdefault("DATABASE_URL", TEST_DATABASE_URL)
 
 
 @pytest.fixture(scope="session")

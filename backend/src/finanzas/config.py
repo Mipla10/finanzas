@@ -27,10 +27,11 @@ class DatabaseSettings(BaseSettings):
     database_url: str
 
 
-class Settings(BaseSettings):
-    """Si falta algo obligatorio o no cumple las reglas, la app no arranca."""
+class Settings(DatabaseSettings):
+    """Si falta algo obligatorio o no cumple las reglas, la app no arranca.
 
-    model_config = _ENV_CONFIG
+    Incluye database_url (heredado): la app siembra el usuario al arrancar.
+    """
 
     app_password: SecretStr
     app_env: Literal["local", "production"] = "production"
