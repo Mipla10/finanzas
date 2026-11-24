@@ -158,7 +158,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** se crea la tabla de categorías.
   - **Commit:** `feat(001): T12 tabla categories`
 
-- [ ] **T13 · Tabla `movements`**
+- [x] **T13 · Tabla `movements`**
   - **Cubre:** RF-7, RNF-5 · Plan §2.2 (tabla de forma y `ck_movement_shape`), índices
   - **Depende de:** T12
   - **Tests primero:** `tests/integration/test_schema_movements.py`:
