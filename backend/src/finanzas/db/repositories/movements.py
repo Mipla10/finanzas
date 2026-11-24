@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import date
 
-from sqlalchemy import ColumnElement, func, or_, select
+from sqlalchemy import BigInteger, ColumnElement, cast, func, or_, select
 from sqlalchemy.orm import Session
 
 from finanzas.db.models import Account, Category, Movement, MovementVersion
@@ -123,3 +123,26 @@ def count(session: Session, conditions: list[ColumnElement[bool]]) -> int:
         session.scalar(select(func.count()).select_from(Movement).where(*conditions))
         or 0
     )
+
+
+def totals(
+    session: Session, conditions: list[ColumnElement[bool]]
+) -> tuple[int, int, int]:
+    """(ingresos sin rendimientos, rendimientos, gastos) del filtro completo.
+
+    Los anulados nunca suman, aunque el listado los muestre. Transferencias y
+    ajustes no son ingreso ni gasto: no entran en ningún SUM.
+    """
+
+    def total(*types: MovementType) -> ColumnElement[int]:
+        summed = func.sum(Movement.amount_cents).filter(Movement.type.in_(types))
+        return cast(func.coalesce(summed, 0), BigInteger)  # entero exacto
+
+    row = session.execute(
+        select(
+            total(MovementType.INCOME),
+            total(MovementType.YIELD),
+            total(MovementType.EXPENSE),
+        ).where(*conditions, Movement.voided_at.is_(None))
+    ).one()
+    return row[0], row[1], row[2]

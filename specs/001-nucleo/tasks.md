@@ -481,7 +481,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** buscar tus movimientos por fechas, cuenta, categoría o tipo, página por página.
   - **Commit:** `feat(001): T39 listar y filtrar movimientos`
 
-- [ ] **T40 · Listado: totales**
+- [x] **T40 · Listado: totales**
   - **Cubre:** RF-17 · CL-38 · Plan §5.1, §2.4
   - **Depende de:** T39
   - **Tests primero:** `tests/integration/test_list_service.py`:

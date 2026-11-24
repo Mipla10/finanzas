@@ -459,11 +459,22 @@ MAX_LIMIT = 200
 
 
 @dataclass(frozen=True)
+class Totals:
+    """Totales del filtro completo (RF-17). Neto = ingresos − gastos."""
+
+    income_cents: int  # incluye los rendimientos
+    yield_cents: int  # los rendimientos, también por separado
+    expense_cents: int
+    net_cents: int
+
+
+@dataclass(frozen=True)
 class MovementPage:
     items: list[Movement]
     total_items: int  # del filtro completo, no solo de la página
     limit: int
     offset: int
+    totals: Totals
 
 
 def _check_owned_ids(
@@ -522,4 +533,16 @@ def list_movements(
         total_items=movements_repo.count(session, conditions),
         limit=limit,
         offset=offset,
+        totals=_totals(session, conditions),
+    )
+
+
+def _totals(session: Session, conditions: Any) -> Totals:
+    income, yields, expense = movements_repo.totals(session, conditions)
+    income_with_yields = income + yields
+    return Totals(
+        income_cents=income_with_yields,
+        yield_cents=yields,
+        expense_cents=expense,
+        net_cents=income_with_yields - expense,
     )

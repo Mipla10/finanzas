@@ -256,3 +256,93 @@ def test_unknown_or_foreign_filter_ids_look_like_they_do_not_exist(
         field,
         lambda: listing(db_session, owner_a, **{kind: [foreign]}),
     )
+
+
+# --- T40: totales del listado (RF-17, CL-38) ---
+
+
+def totals_of(page: Any) -> tuple[int, int, int, int]:
+    t = page.totals
+    return (t.income_cents, t.yield_cents, t.expense_cents, t.net_cents)
+
+
+def test_cl_38_totals_follow_the_spec_example(
+    db_session: Session,
+    owner_a: User,
+    book: Book,
+    make_movement: Callable[..., Movement],
+) -> None:
+    from finanzas.domain.movements import AdjustmentDirection
+
+    make_movement(
+        owner_a, T.INCOME, to_account=book.nequi, category=book.salary, amount_cents=100
+    )
+    make_movement(owner_a, T.YIELD, to_account=book.ahorro, amount_cents=10)
+    make_movement(owner_a, from_account=book.nequi, category=book.food, amount_cents=30)
+    make_movement(
+        owner_a,
+        T.TRANSFER,
+        from_account=book.lulo,
+        to_account=book.cash,
+        amount_cents=50,
+    )
+    make_movement(
+        owner_a,
+        T.ADJUSTMENT,
+        to_account=book.cash,
+        amount_cents=5,
+        adjustment_direction=AdjustmentDirection.IN,
+    )
+
+    assert totals_of(listing(db_session, owner_a)) == (110, 10, 30, 80)
+
+
+def test_totals_cover_the_whole_filter_not_just_the_page(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    book: Book,
+    make_movement: Callable[..., Movement],
+) -> None:
+    for _ in range(3):
+        make_movement(
+            owner_a, from_account=book.nequi, category=book.food, amount_cents=1000
+        )
+        clock.advance(timedelta(seconds=1))
+    page = listing(db_session, owner_a, limit=1)
+    assert len(page.items) == 1
+    assert totals_of(page) == (0, 0, 3000, -3000)
+
+
+def test_voided_never_add_to_totals_even_when_shown(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    book: Book,
+    make_movement: Callable[..., Movement],
+) -> None:
+    make_movement(
+        owner_a, from_account=book.nequi, category=book.food, amount_cents=1000
+    )
+    voided = make_movement(
+        owner_a, from_account=book.nequi, category=book.food, amount_cents=5000
+    )
+    voided.voided_at = clock.now()
+    db_session.flush()
+    page = listing(db_session, owner_a, include_voided=True)
+    assert len(page.items) == 2
+    assert totals_of(page) == (0, 0, 1000, -1000)
+
+
+def test_totals_respect_the_filter_and_are_exact_integers(
+    db_session: Session,
+    owner_a: User,
+    book: Book,
+    make_movement: Callable[..., Movement],
+) -> None:
+    make_movement(owner_a, T.YIELD, to_account=book.ahorro, amount_cents=123456)
+    make_movement(owner_a, T.YIELD, to_account=book.lulo, amount_cents=1)
+    page = listing(db_session, owner_a, account_ids=[book.ahorro.id])
+    assert totals_of(page) == (123456, 123456, 0, 123456)
+    assert all(type(value) is int for value in totals_of(page))
+    assert totals_of(listing(db_session, owner_a, types=[T.TRANSFER])) == (0, 0, 0, 0)
