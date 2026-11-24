@@ -631,11 +631,12 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** se simula un mes completo y se comprueba que los números dan exactamente lo calculado a mano.
   - **Commit:** `test(001): T53 escenario de un mes`
 
-- [ ] **T54 · Rendimiento (p95 < 300 ms)**
+- [x] **T54 · Rendimiento (p95 < 300 ms)**
   - **Cubre:** RNF-3 · Plan §5.7, riesgo R-6
   - **Depende de:** T50
   - **Tests primero:** `tests/perf/test_rnf3.py`, marcado `perf`. Con 10.000 movimientos sintéticos, se mide el p95 de 100 registros y de 100 consultas de saldos.
   - **Hecho cuando:** `uv run pytest -m perf` pasa en local y el resultado se anota en esta tarea.
+  - **Resultado (2026-11-24, local):** con 10.000 movimientos, p95 al registrar = 14,1 ms y p95 al consultar saldos = 25,1 ms (límite: 300 ms).
   - **En simple:** comprobar que la app responde rápido aunque tengas miles de movimientos.
   - **Commit:** `test(001): T54 prueba de rendimiento`
 

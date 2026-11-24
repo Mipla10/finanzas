@@ -27,6 +27,8 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-m 'not perf'"  # RNF-3 se mide a mano: uv run pytest -m perf (plan §5.7)
+markers = ["perf: prueba de rendimiento en local, no corre en CI (RNF-3)"]
 
 [tool.coverage.run]
 branch = true          # mide también las ramas (if/else), plan §8.4
