@@ -53,7 +53,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** se arranca la base de datos en una «cajita» de Docker y se deja un archivo de ejemplo con la configuración, sin contraseñas reales.
   - **Commit:** `chore(001): T2 postgres en docker compose`
 
-- [ ] **T3 · Configuración (`config.py`)**
+- [x] **T3 · Configuración (`config.py`)**
   - **Cubre:** RNF-4 · Plan §5.6
   - **Depende de:** T1
   - **Tests primero:** `tests/unit/test_config.py`:
