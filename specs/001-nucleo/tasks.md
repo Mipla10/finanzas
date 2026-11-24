@@ -75,7 +75,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** un «reloj» que la app consulta para saber qué día es hoy en Colombia y que los tests pueden detener en el día que quieran.
   - **Commit:** `feat(001): T4 reloj inyectable con hora de Bogotá`
 
-- [ ] **T5 · Alembic, sesión de BD y fixture con rollback**
+- [x] **T5 · Alembic, sesión de BD y fixture con rollback**
   - **Cubre:** base de la fase 2 · Plan §6.3, §8.2 (`db_session`)
   - **Depende de:** T2, T3
   - **Tests primero:** `tests/integration/test_db_session.py`. Un test inserta en una tabla temporal y el siguiente comprueba que no ve ese dato.

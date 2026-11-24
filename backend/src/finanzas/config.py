@@ -12,14 +12,25 @@ REPO_ROOT_ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
 MIN_PASSWORD_LENGTH = 12
 
 
+_ENV_CONFIG = SettingsConfigDict(
+    env_file=REPO_ROOT_ENV_FILE,
+    env_file_encoding="utf-8",
+    extra="ignore",
+)
+
+
+class DatabaseSettings(BaseSettings):
+    """Solo la conexión a la BD: lo único que necesitan las migraciones."""
+
+    model_config = _ENV_CONFIG
+
+    database_url: str
+
+
 class Settings(BaseSettings):
     """Si falta algo obligatorio o no cumple las reglas, la app no arranca."""
 
-    model_config = SettingsConfigDict(
-        env_file=REPO_ROOT_ENV_FILE,
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
+    model_config = _ENV_CONFIG
 
     app_password: SecretStr
     app_env: Literal["local", "production"] = "production"
