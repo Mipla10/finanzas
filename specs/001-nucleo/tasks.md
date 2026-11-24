@@ -492,7 +492,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** cuánto entró, cuánto salió y cuánto te quedó en el periodo que buscaste.
   - **Commit:** `feat(001): T40 totales del listado`
 
-- [ ] **T41 · Lista de comercios**
+- [x] **T41 · Lista de comercios**
   - **Cubre:** RF-13 · Plan §5.3
   - **Depende de:** T30
   - **Tests primero:** `tests/integration/test_merchants_service.py`:

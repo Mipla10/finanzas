@@ -146,3 +146,44 @@ def totals(
         ).where(*conditions, Movement.voided_at.is_(None))
     ).one()
     return row[0], row[1], row[2]
+
+
+def merchant_uses(
+    session: Session, owner_id: uuid.UUID, limit: int
+) -> list[tuple[str, int]]:
+    """(forma más reciente, usos) por comercio (plan §5.3).
+
+    Agrupa por merchant_key entre los movimientos VIGENTES del dueño; ordena
+    por usos y, a igual uso, por uso más reciente (fecha y luego registro).
+    """
+    recency = (Movement.date.desc(), Movement.created_at.desc(), Movement.id.desc())
+    ranked = (
+        select(
+            Movement.merchant,
+            Movement.merchant_key,
+            Movement.date,
+            Movement.created_at,
+            func.row_number()
+            .over(partition_by=Movement.merchant_key, order_by=recency)
+            .label("recency_rank"),
+            func.count().over(partition_by=Movement.merchant_key).label("uses"),
+        )
+        .where(
+            Movement.owner_id == owner_id,
+            Movement.voided_at.is_(None),
+            Movement.merchant_key.is_not(None),
+        )
+        .subquery()
+    )
+    query = (
+        select(ranked.c.merchant, ranked.c.uses)
+        .where(ranked.c.recency_rank == 1)
+        .order_by(
+            ranked.c.uses.desc(),
+            ranked.c.date.desc(),
+            ranked.c.created_at.desc(),
+            ranked.c.merchant_key,
+        )
+        .limit(limit)
+    )
+    return [(merchant, uses) for merchant, uses in session.execute(query)]
