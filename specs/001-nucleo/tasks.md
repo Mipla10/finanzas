@@ -613,7 +613,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la prueba de que nadie puede ver ni tocar las finanzas de otra persona.
   - **Commit:** `test(001): T51 aislamiento entre usuarios`
 
-- [ ] **T52 · Sin cambios parciales y todo en español**
+- [x] **T52 · Sin cambios parciales y todo en español**
   - **Cubre:** RF-22, RNF-7 · Plan §4.4
   - **Depende de:** T50
   - **Tests primero:** `tests/integration/test_errors_api.py`:

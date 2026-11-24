@@ -1,16 +1,30 @@
-"""T9/T10: formato estándar de errores, siempre en español (RF-22, RNF-7, plan §4.4)."""
+"""T9/T10/T52: formato estándar de errores, siempre en español.
 
+RF-22, RNF-7, plan §4.4.
+"""
+
+import ast
+import re
+import uuid
+from collections.abc import Callable, Iterator
+from pathlib import Path
 from typing import Annotated, Any
 
 import pytest
 from fastapi import APIRouter, Query
 from fastapi.testclient import TestClient
 from pydantic import BaseModel, Field
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
+import finanzas
+from finanzas.api import deps
 from finanzas.config import Settings
+from finanzas.db.models import Account, Category, Movement, MovementVersion, User
 from finanzas.domain import messages
 from finanzas.domain.errors import Conflict, InvalidData, NotFound
 from finanzas.main import API_PREFIX, create_app
+from finanzas.services import movements as movements_service
 
 PASSWORD = "clave-de-prueba-12"
 AUTH = {"Authorization": f"Bearer {PASSWORD}"}
@@ -218,3 +232,238 @@ def test_field_path_without_location_prefix(loc: tuple[Any, ...], field: Any) ->
 
     translated = translate_validation_error({"type": "missing", "loc": loc})
     assert translated == {"field": field, "message": messages.render("required")}
+
+
+# --- T52: sin cambios parciales y todo en español (RF-22, RNF-7, plan §4.4) ---
+
+
+def test_failure_between_movement_and_version_leaves_no_rows(
+    client: TestClient,
+    db_session: Session,
+    owner_a: User,
+    make_account: Callable[..., Account],
+    make_category: Callable[..., Category],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    account = make_account(owner_a, initial_balance_cents=100000)
+    category = make_category(owner_a)
+
+    def per_request_session() -> Iterator[Session]:
+        # Como en producción: una sesión por petición que se cierra sin confirmar
+        # si algo falla (aquí, sobre un savepoint de la transacción del test).
+        with Session(
+            bind=db_session.connection(), join_transaction_mode="create_savepoint"
+        ) as session:
+            yield session
+
+    def count(model: Any) -> int:
+        query = select(func.count()).select_from(model)
+        return db_session.scalar(query.where(model.owner_id == owner_a.id)) or 0
+
+    movements_seen: list[int] = []
+
+    def failing_version(**_: Any) -> None:
+        movements_seen.append(count(Movement))  # el movimiento ya se insertó
+        raise RuntimeError("fallo simulado antes de guardar la versión")
+
+    client.app.dependency_overrides[deps.get_session] = per_request_session  # type: ignore[attr-defined]
+    monkeypatch.setattr(movements_service, "MovementVersion", failing_version)
+
+    response = client.post(
+        f"{API_PREFIX}/movements",
+        json={
+            "type": "expense",
+            "amount_cents": 2500,
+            "from_account_id": str(account.id),
+            "category_id": str(category.id),
+        },
+    )
+
+    assert response.status_code == 500
+    assert error_of(response)["message"] == messages.render("internal")
+    assert movements_seen == [1]
+    assert (count(Movement), count(MovementVersion)) == (0, 0)
+
+
+ENGLISH_WORDS = {
+    "the", "is", "must", "should", "field", "value", "invalid", "required",
+    "not", "found", "cannot", "account", "amount", "date", "balance", "please",
+}  # fmt: skip
+
+
+@pytest.mark.parametrize("code", sorted(messages.MESSAGES))
+def test_every_catalog_message_is_spanish(code: str) -> None:
+    text = messages.MESSAGES[code]
+    without_params = re.sub(r"\{\w+\}", "", text)  # {account} no es texto visible
+    words = set(re.findall(r"[a-záéíóúñü]+", without_params.lower()))
+    assert not words & ENGLISH_WORDS, (code, text)
+    assert text[0].isupper() and text.endswith("."), (code, text)
+
+
+def test_every_literal_code_in_the_source_exists_in_the_catalog() -> None:
+    source = Path(finanzas.__file__).parent
+    raisers = {"InvalidData", "NotFound", "Conflict", "render"}
+    unknown = []
+    for path in source.rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if not (isinstance(node, ast.Call) and node.args):
+                continue
+            name = getattr(node.func, "id", getattr(node.func, "attr", None))
+            first = node.args[0]
+            if (
+                name in raisers
+                and isinstance(first, ast.Constant)
+                and first.value not in messages.MESSAGES
+            ):
+                unknown.append((path.name, node.lineno, first.value))
+    assert unknown == []
+
+
+def catalog_codes_of(message: str) -> set[str]:
+    """Códigos del catálogo cuyo texto (con parámetros) produce `message`."""
+    codes = set()
+    for code, template in messages.MESSAGES.items():
+        pattern = re.sub(r"\\\{\w+\\\}", ".+", re.escape(template))
+        if re.fullmatch(pattern, message):
+            codes.add(code)
+    return codes
+
+
+# Códigos que la API real no puede producir: otra validación los atrapa antes o son
+# genéricos de respaldo. Sus textos se prueban con las rutas de prueba de T9/T10.
+NOT_REACHABLE_VIA_API = {
+    "invalid_value": "respaldo para errores de Pydantic sin traducción",
+    "state_conflict": "conflicto genérico, sin uso en los servicios",
+    "amount_not_integer": "el esquema estricto responde antes con int_type",
+    "gt": "la API solo usa límites ge/le",
+    "lt": "la API solo usa límites ge/le",
+    "too_short": "la API no exige longitudes mínimas en el esquema",
+    "http_error": "respaldo para códigos HTTP sin traducción",
+}
+
+
+def test_walk_every_error_and_warning_through_the_api(client: TestClient) -> None:
+    """Provoca cada error y advertencia posibles por la API real (hoy: 23/11/2026).
+
+    Cada mensaje recibido debe salir del catálogo en español, y entre todos deben
+    cubrir el catálogo completo, salvo lo inalcanzable documentado arriba.
+    """
+    seen: set[str] = set()
+    v1 = API_PREFIX
+
+    def call(method: str, path: str, expect: int, **kwargs: Any) -> Any:
+        response = client.request(method, v1 + path, **kwargs)
+        assert response.status_code == expect, (method, path, response.text)
+        body = response.json() if response.content else {}
+        texts = []
+        if "error" in body:
+            texts.append(body["error"]["message"])
+            texts += [d["message"] for d in body["error"]["details"]]
+        texts += [w["message"] for w in body.get("warnings", [])]
+        for text in texts:
+            codes = catalog_codes_of(text)
+            assert codes, f"mensaje fuera del catálogo: {text!r}"
+            seen.update(codes)
+        return body
+
+    def account(name: str, kind: str = "bank", expect: int = 201, **extra: Any) -> Any:
+        data = {"name": name, "type": kind, "initial_balance_cents": 0, **extra}
+        return call("POST", "/accounts", expect, json=data)
+
+    def movement(expect: int, **data: Any) -> Any:
+        return call("POST", "/movements", expect, json={"amount_cents": 1000, **data})
+
+    start = {"start_date": "2026-11-01"}
+    bank = account("Banco", initial_balance_cents=100000, **start)["id"]
+    account("Bolsillo", "pocket", parent_id=bank)
+    cash = account("Caja", "cash", **start)["id"]
+    food = call("POST", "/categories", 201, json={"name": "Comida", "kind": "expense"})
+    salary = call("POST", "/categories", 201, json={"name": "Sueldo", "kind": "income"})
+    food, salary = food["id"], salary["id"]
+    spent = movement(201, type="expense", from_account_id=bank, category_id=food)
+    spent = spent["movement"]["id"]
+
+    # Cuentas
+    call("GET", f"/accounts/{uuid.uuid4()}", 404)
+    account("x" * 61, expect=422)
+    account("Futura", expect=422, start_date="2026-12-01")
+    account("banco", expect=409)
+    account("Con padre", expect=422, parent_id=bank)
+    account("Bolsillo caja", "pocket", expect=422, parent_id=cash)
+    closed = account("Banco cerrado")["id"]
+    call("POST", f"/accounts/{closed}/archive", 200)
+    call("POST", f"/accounts/{closed}/archive", 409)
+    account("Bolsillo cerrado", "pocket", expect=409, parent_id=closed)
+    call("POST", f"/accounts/{cash}/unarchive", 409)
+    call("PATCH", f"/accounts/{bank}", 409, json={"initial_balance_cents": 1})
+    full = account("Llena", "digital_wallet", initial_balance_cents=5000)["id"]
+    call("POST", f"/accounts/{full}/archive", 409)
+    parent = account("Banco padre")["id"]
+    account("Bolsillo activo", "pocket", parent_id=parent)
+    call("POST", f"/accounts/{parent}/archive", 409)
+    call("DELETE", f"/accounts/{parent}", 409)
+
+    # Categorías
+    call("POST", "/categories", 409, json={"name": "comida", "kind": "expense"})
+    call("DELETE", f"/categories/{food}", 409)
+    old = call("POST", "/categories", 201, json={"name": "Vieja", "kind": "expense"})
+    call("POST", f"/categories/{old['id']}/archive", 200)
+
+    # Movimientos
+    expense = {"type": "expense", "from_account_id": bank, "category_id": food}
+    movement(422, **{**expense, "amount_cents": 0})
+    movement(422, **{**expense, "amount_cents": 2**53})
+    movement(422, **expense, date="2026-11-24")
+    movement(422, **expense, date="2026-10-31")
+    movement(422, type="expense", from_account_id=bank)
+    movement(422, **{**expense, "category_id": salary})
+    movement(422, type="yield", to_account_id=bank, category_id=food)
+    movement(422, type="transfer", from_account_id=bank, to_account_id=bank)
+    movement(422, type="adjustment", from_account_id=bank)
+    movement(409, **{**expense, "from_account_id": closed})
+    movement(409, **{**expense, "category_id": old["id"]})
+    call("PATCH", f"/movements/{spent}", 422, json={"type": "income"})
+    call("GET", "/movements", 422, params={"date_from": "2026-11-20", "date_to": "1"})
+    call(
+        "GET",
+        "/movements",
+        422,
+        params={"date_from": "2026-11-20", "date_to": "2026-11-10"},
+    )
+    adjusted = call(
+        "POST", f"/accounts/{cash}/adjustments", 201, json={"real_balance_cents": 10}
+    )
+    call("PATCH", f"/movements/{adjusted['movement']['id']}", 409, json={"note": "x"})
+    call("POST", f"/movements/{spent}/void", 200)
+    call("POST", f"/movements/{spent}/void", 409)
+    call("PATCH", f"/movements/{spent}", 409, json={"note": "x"})
+
+    # Advertencias: saldo negativo y cuenta archivada con saldo distinto de cero
+    movement(201, **{**expense, "from_account_id": cash, "amount_cents": 50})
+    wallet = account("Billetera", "digital_wallet")["id"]
+    movement(201, type="yield", to_account_id=wallet)
+    out = movement(201, type="transfer", from_account_id=wallet, to_account_id=bank)
+    call("POST", f"/accounts/{wallet}/archive", 200)
+    call("POST", f"/movements/{out['movement']['id']}/void", 200)
+    call("DELETE", f"/accounts/{cash}", 409)  # ya se usó (sin bolsillos)
+
+    # Formato y HTTP
+    call("POST", "/accounts", 422, json={"name": 1, "type": "bank"})
+    call("POST", "/accounts", 422, json={"name": "A", "type": "otro", "extra": 1})
+    movement(422, **{**expense, "amount_cents": "1000"})
+    call("GET", "/movements", 422, params={"include_voided": "quizás", "limit": 0})
+    call("GET", "/movements", 422, params={"limit": 999, "account_id": "no-es-id"})
+    call(
+        "POST",
+        "/movements",
+        422,
+        content="{",
+        headers={"Content-Type": "application/json"},
+    )
+    call("GET", "/no-existe", 404)
+    call("DELETE", "/balances", 405)
+    call("GET", "/balances", 401, headers={"Authorization": "Bearer otra"})
+    call("GET", "/accounts", 200)  # sin errores: no aporta mensajes
+
+    expected = set(messages.MESSAGES) - set(NOT_REACHABLE_VIA_API) - {"internal"}
+    assert seen >= expected, sorted(expected - seen)
