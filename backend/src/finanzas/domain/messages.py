@@ -34,6 +34,8 @@ MESSAGES: dict[str, str] = {
     "account_has_active_pockets": "Primero archiva sus bolsillos activos: {pockets}.",
     "already_archived": "Ya está archivada.",
     "not_archived": "No está archivada.",
+    "account_in_use": "La cuenta ya se usó: archívala en vez de borrarla.",
+    "account_has_pockets": "La cuenta tiene bolsillos: no se puede borrar.",
     # Movimientos (RF-7 a RF-11)
     "not_allowed_for_type": "Este campo no aplica a este tipo de movimiento.",
     "same_account": "La cuenta de destino debe ser distinta de la de origen.",

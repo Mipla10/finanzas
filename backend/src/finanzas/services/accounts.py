@@ -165,3 +165,16 @@ def unarchive_account(
     account.archived_at = None
     session.commit()
     return account
+
+
+def delete_account(
+    session: Session, owner_id: uuid.UUID, account_id: uuid.UUID
+) -> None:
+    """Borra una cuenta que NUNCA se usó (RF-5, plan §3.8). Si se usó, se archiva."""
+    account = get_account(session, owner_id, account_id)
+    if repo.has_pockets(session, owner_id, account.id):
+        raise Conflict("account_has_pockets")
+    if repo.used_by_movements(session, owner_id, account.id):
+        raise Conflict("account_in_use")
+    session.delete(account)
+    session.commit()

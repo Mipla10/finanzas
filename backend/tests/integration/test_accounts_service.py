@@ -573,3 +573,79 @@ def test_archiving_another_users_account_looks_like_it_does_not_exist(
         ),
     }[action]
     expect(NotFound, "resource_not_found", "account_id", call)
+
+
+# --- T27: borrar solo lo que nunca se usó (RF-5, plan §3.8) ---
+
+
+def test_unused_account_can_be_deleted(
+    db_session: Session, clock: FixedClock, owner_a: User
+) -> None:
+    typo = create(db_session, owner_a, clock, name="Cuenta con error")
+    service.delete_account(db_session, owner_a.id, typo.id)
+    expect(
+        NotFound,
+        "resource_not_found",
+        "account_id",
+        lambda: service.get_account(db_session, owner_a.id, typo.id),
+    )
+
+
+@pytest.mark.parametrize("how", ["active", "voided", "only_past_version"])
+def test_account_used_by_movements_cannot_be_deleted(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    make_movement: Callable[..., Any],
+    how: str,
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    other = create(db_session, owner_a, clock, name="Nequi")
+    movement = make_movement(owner_a, from_account=lulo)
+    if how == "voided":
+        movement.voided_at = clock.now()
+    if how == "only_past_version":
+        movement.from_account_id = other.id  # solo su versión 1 recuerda a Lulo
+    db_session.flush()
+    expect(
+        Conflict,
+        "account_in_use",
+        None,
+        lambda: service.delete_account(db_session, owner_a.id, lulo.id),
+    )
+
+
+@pytest.mark.parametrize("pocket_archived", [False, True])
+def test_parent_of_a_pocket_cannot_be_deleted(
+    db_session: Session, clock: FixedClock, owner_a: User, pocket_archived: bool
+) -> None:
+    lulo = create(db_session, owner_a, clock, name="Lulo")
+    ahorro = create(
+        db_session,
+        owner_a,
+        clock,
+        name="Ahorro",
+        account_type=AccountType.POCKET,
+        parent_id=lulo.id,
+    )
+    if pocket_archived:
+        service.archive_account(db_session, owner_a.id, clock, ahorro.id)
+    expect(
+        Conflict,
+        "account_has_pockets",
+        None,
+        lambda: service.delete_account(db_session, owner_a.id, lulo.id),
+    )
+
+
+def test_deleting_another_users_account_looks_like_it_does_not_exist(
+    db_session: Session, clock: FixedClock, owner_a: User, owner_b: User
+) -> None:
+    mine = create(db_session, owner_a, clock, name="Nequi")
+    expect(
+        NotFound,
+        "resource_not_found",
+        "account_id",
+        lambda: service.delete_account(db_session, owner_b.id, mine.id),
+    )
+    assert service.get_account(db_session, owner_a.id, mine.id) == mine

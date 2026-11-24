@@ -71,3 +71,11 @@ def active_pockets(
         Account.archived_at.is_(None),
     )
     return list(session.scalars(query.order_by(Account.name_key)))
+
+
+def has_pockets(session: Session, owner_id: uuid.UUID, account_id: uuid.UUID) -> bool:
+    """¿Es padre de algún bolsillo, activo o archivado?"""
+    query = select(Account.id).where(
+        Account.owner_id == owner_id, Account.parent_id == account_id
+    )
+    return bool(session.scalar(select(exists(query))))

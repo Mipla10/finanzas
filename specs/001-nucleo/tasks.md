@@ -322,7 +322,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** se pueden «guardar en el cajón» las cuentas que ya no usas, siempre que estén en cero.
   - **Commit:** `feat(001): T26 archivar y desarchivar cuentas`
 
-- [ ] **T27 · Borrar cuenta (regla «nunca usada»)**
+- [x] **T27 · Borrar cuenta (regla «nunca usada»)**
   - **Cubre:** RF-5 · Plan §3.8
   - **Depende de:** T25
   - **Tests primero:** `tests/integration/test_accounts_service.py`:
