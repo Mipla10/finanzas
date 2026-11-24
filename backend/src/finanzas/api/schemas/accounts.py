@@ -3,7 +3,7 @@
 import uuid
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from finanzas.api.schemas.common import BogotaDatetime, Cents, RequestModel
 from finanzas.db.models import Account
@@ -11,6 +11,20 @@ from finanzas.domain.accounts import AccountType
 
 
 class AccountCreate(RequestModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "name": "Ahorro",
+                    "type": "pocket",
+                    "parent_id": "00000000-0000-4000-8000-0000000000a1",
+                    "initial_balance_cents": 300000000,
+                    "start_date": "2026-11-01",
+                }
+            ]
+        }
+    )
+
     name: str
     type: AccountType
     parent_id: uuid.UUID | None = None  # obligatoria solo en los bolsillos

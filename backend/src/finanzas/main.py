@@ -17,6 +17,7 @@ from finanzas.api.routers import (
     merchants,
     movements,
 )
+from finanzas.api.schemas.errors import error_responses
 from finanzas.config import Settings
 from finanzas.db.base import make_engine
 from finanzas.domain.dates import SystemClock
@@ -65,10 +66,13 @@ def create_app(
     install_error_handlers(app)
 
     # Público: solo /health.
-    app.include_router(health.router, prefix=API_PREFIX)
+    app.include_router(health.router, prefix=API_PREFIX, responses=error_responses(500))
 
     # Protegido: todo lo demás exige la contraseña.
-    protected = APIRouter(dependencies=[Depends(require_password)])
+    protected = APIRouter(
+        dependencies=[Depends(require_password)],
+        responses=error_responses(401, 500),
+    )
     for router in PROTECTED_ROUTERS if protected_routers is None else protected_routers:
         protected.include_router(router)
     app.include_router(protected, prefix=API_PREFIX)

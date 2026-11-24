@@ -588,7 +588,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la ventanilla para preguntar «¿cuánto tengo?».
   - **Commit:** `feat(001): T49 endpoints de saldos y comercios`
 
-- [ ] **T50 · Documentación OpenAPI completa**
+- [x] **T50 · Documentación OpenAPI completa**
   - **Cubre:** RNF-9 · Plan §4.2
   - **Depende de:** T43 a T49
   - **Tests primero:** `tests/integration/test_docs_api.py`. Con `APP_ENV=local`, `/openapi.json` lista los 23 endpoints de §4.2, cada uno con descripción en español y su esquema de error.

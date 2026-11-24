@@ -9,8 +9,15 @@ from finanzas.services.balances import get_balances
 router = APIRouter(tags=["saldos"])
 
 
-@router.get("/balances", summary="Saldos por cuenta, subtotales y total")
+@router.get(
+    "/balances",
+    summary="Saldos por cuenta, subtotales y total",
+    response_description="Saldos.",
+)
 def balances(session: SessionDep, owner_id: OwnerDep) -> BalancesOut:
+    """Saldo propio de cada cuenta, subtotal «banco + bolsillos» y total general (RF-15,
+    RF-16). Las cuentas archivadas aparecen solo si su saldo no es cero.
+    """
     summary = get_balances(session, owner_id)
     return BalancesOut(
         accounts=[

@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from finanzas.api.schemas.common import Cents, RequestModel
 from finanzas.api.schemas.movements import MovementOut, WarningOut
@@ -10,6 +10,10 @@ from finanzas.api.schemas.movements import MovementOut, WarningOut
 
 class AdjustmentRequest(RequestModel):
     """Solo el saldo real de HOY: no se admite fecha (CL-17)."""
+
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [{"real_balance_cents": 17150000}]}
+    )
 
     real_balance_cents: Cents  # puede ser cero o negativo
 

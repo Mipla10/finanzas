@@ -4,7 +4,7 @@ import datetime as dt
 import uuid
 from collections.abc import Mapping
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from finanzas.api.schemas.common import BogotaDatetime, Cents, RequestModel
 from finanzas.db.models import Movement
@@ -25,6 +25,22 @@ def named(item_id: uuid.UUID | None, names: Mapping[uuid.UUID, str]) -> NamedRef
 
 class MovementCreate(RequestModel):
     """Gasto, ingreso, transferencia o rendimiento. Los ajustes van aparte."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "type": "expense",
+                    "amount_cents": 2500000,
+                    "date": "2026-11-03",
+                    "from_account_id": "00000000-0000-4000-8000-0000000000a3",
+                    "category_id": "00000000-0000-4000-8000-0000000000c1",
+                    "merchant": "rappi",
+                    "note": "Almuerzo",
+                }
+            ]
+        }
+    )
 
     type: MovementType
     amount_cents: Cents
@@ -124,6 +140,10 @@ class MovementCorrection(RequestModel):
     `type` se admite solo para rechazar con claridad un cambio de tipo (CL-21).
     """
 
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [{"amount_cents": 2500000}]}
+    )
+
     type: MovementType | None = None
     amount_cents: Cents | None = None
     date: dt.date | None = None
@@ -141,6 +161,10 @@ class CorrectionOut(BaseModel):
 
 
 class VoidRequest(RequestModel):
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [{"reason": "Registrado dos veces"}]}
+    )
+
     reason: str | None = None
 
 
