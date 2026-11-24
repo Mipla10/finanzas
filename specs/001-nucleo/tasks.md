@@ -64,7 +64,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la app lee su configuración y se niega a arrancar si no tiene contraseña.
   - **Commit:** `feat(001): T3 configuración con contraseña obligatoria`
 
-- [ ] **T4 · Reloj inyectable (`Clock`)**
+- [x] **T4 · Reloj inyectable (`Clock`)**
   - **Cubre:** RF-2, RNF-8 · Plan §5.5
   - **Depende de:** T1
   - **Tests primero:** `tests/unit/test_dates.py` comprueba:
