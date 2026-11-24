@@ -527,7 +527,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la «ventanilla» por la que la web y WhatsApp pedirán crear y manejar cuentas.
   - **Commit:** `feat(001): T43 endpoints de cuentas`
 
-- [ ] **T44 · API de categorías**
+- [x] **T44 · API de categorías**
   - **Cubre:** RF-6 · Plan §4.2
   - **Depende de:** T10, T29
   - **Tests primero:** `tests/integration/test_categories_api.py`. Se prueban los endpoints de categorías con sus códigos y el filtro `?kind=`.

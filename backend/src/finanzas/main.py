@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from finanzas import __version__
 from finanzas.api.deps import require_password
 from finanzas.api.errors import install_error_handlers
-from finanzas.api.routers import accounts, health
+from finanzas.api.routers import accounts, categories, health
 from finanzas.config import Settings
 from finanzas.db.base import make_engine
 from finanzas.domain.dates import SystemClock
@@ -18,7 +18,7 @@ from finanzas.services.bootstrap import ensure_initial_user
 API_PREFIX = "/api/v1"
 
 # Routers de recursos (cuentas, movimientos…). Todos nacen protegidos.
-PROTECTED_ROUTERS: list[APIRouter] = [accounts.router]
+PROTECTED_ROUTERS: list[APIRouter] = [accounts.router, categories.router]
 
 
 def create_app(
