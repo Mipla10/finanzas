@@ -417,7 +417,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** arreglar un movimiento guardando cómo era antes.
   - **Commit:** `feat(001): T34 corregir movimientos con historial`
 
-- [ ] **T35 · Corrección: rechazos y cuentas o categorías archivadas**
+- [x] **T35 · Corrección: rechazos y cuentas o categorías archivadas**
   - **Cubre:** RF-19 · CL-18, CL-20, CL-21, CL-22, CL-23, CL-25 (corregir) · Plan §3.6
   - **Depende de:** T34, T33
   - **Tests primero:** `tests/integration/test_corrections_service.py`:

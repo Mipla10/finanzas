@@ -43,6 +43,13 @@ MESSAGES: dict[str, str] = {
     "not_allowed_for_type": "Este campo no aplica a este tipo de movimiento.",
     "account_archived": "La cuenta está archivada.",
     "category_archived": "La categoría está archivada.",
+    "movement_voided": "El movimiento está anulado y no se puede corregir.",
+    "adjustment_not_correctable": (
+        "Los ajustes no se corrigen: anúlalo y vuelve a ajustar."
+    ),
+    "type_not_changeable": (
+        "El tipo no se puede cambiar: anula el movimiento y crea otro."
+    ),
     "adjustment_not_via_movements": (
         "Los ajustes se hacen con el ajuste de saldo de la cuenta."
     ),

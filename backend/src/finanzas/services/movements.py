@@ -36,23 +36,30 @@ class MovementResult:
 
 
 def _active_account(
-    session: Session, owner_id: uuid.UUID, account_id: uuid.UUID, field: str
+    session: Session,
+    owner_id: uuid.UUID,
+    account_id: uuid.UUID,
+    field: str,
+    already_had: frozenset[uuid.UUID] = frozenset(),
 ) -> Account:
     account = accounts_repo.get_owned(session, owner_id, account_id)
     if account is None:  # inexistente o de otro usuario: misma respuesta (RF-22)
         raise NotFound("resource_not_found", field=field)
-    if account.archived_at is not None:
+    if account.archived_at is not None and account.id not in already_had:
         raise Conflict("account_archived", field=field)
     return account
 
 
 def _active_category(
-    session: Session, owner_id: uuid.UUID, category_id: uuid.UUID
+    session: Session,
+    owner_id: uuid.UUID,
+    category_id: uuid.UUID,
+    already_had: frozenset[uuid.UUID] = frozenset(),
 ) -> Category:
     category = categories_repo.get_owned(session, owner_id, category_id)
     if category is None:
         raise NotFound("resource_not_found", field="category_id")
-    if category.archived_at is not None:
+    if category.archived_at is not None and category.id not in already_had:
         raise Conflict("category_archived", field="category_id")
     return category
 
@@ -68,9 +75,12 @@ def _validate(
     from_account_id: uuid.UUID | None,
     to_account_id: uuid.UUID | None,
     category_id: uuid.UUID | None,
+    already_had: frozenset[uuid.UUID] = frozenset(),
 ) -> tuple[int, date, list[Account]]:
     """Reglas de un movimiento (plan §3.5): sirven igual para crear y corregir.
 
+    `already_had`: cuentas y categoría que el movimiento ya tenía; al corregir
+    se aceptan aunque estén archivadas (RF-19). Lo NUEVO debe estar activo.
     Devuelve el monto y la fecha validados y las cuentas involucradas.
     """
     amount = validate_amount(amount_cents)
@@ -82,7 +92,7 @@ def _validate(
         adjustment_direction=None,
     )
     accounts = [
-        _active_account(session, owner_id, account_id, field)
+        _active_account(session, owner_id, account_id, field, already_had)
         for field, account_id in (
             ("from_account_id", from_account_id),
             ("to_account_id", to_account_id),
@@ -95,7 +105,7 @@ def _validate(
         account_starts={account.name: account.start_date for account in accounts},
     )
     if category_id is not None:
-        category = _active_category(session, owner_id, category_id)
+        category = _active_category(session, owner_id, category_id, already_had)
         validate_category_kind(movement_type, category.kind)
     return amount, movement_date, accounts
 
@@ -221,6 +231,7 @@ def correct_movement(
     clock: Clock,
     movement_id: uuid.UUID,
     *,
+    movement_type: Any = UNSET,
     amount_cents: Any = UNSET,
     on: Any = UNSET,
     from_account_id: Any = UNSET,
@@ -237,6 +248,12 @@ def correct_movement(
     movement = movements_repo.get_owned_for_update(session, owner_id, movement_id)
     if movement is None:
         raise NotFound("resource_not_found", field="movement_id")
+    if movement.voided_at is not None:
+        raise Conflict("movement_voided")  # CL-25
+    if movement.type is MovementType.ADJUSTMENT:
+        raise Conflict("adjustment_not_correctable")  # CL-18: se anula y reajusta
+    if movement_type is not UNSET and movement_type != movement.type:
+        raise InvalidData("type_not_changeable", field="type")  # CL-21
     before = _snapshot(movement)
 
     def pick(given: Any, current: Any) -> Any:
@@ -274,6 +291,15 @@ def correct_movement(
         from_account_id=after.from_account_id,
         to_account_id=after.to_account_id,
         category_id=after.category_id,
+        already_had=frozenset(
+            item
+            for item in (
+                before.from_account_id,
+                before.to_account_id,
+                before.category_id,
+            )
+            if item is not None
+        ),
     )
 
     now = clock.now()
