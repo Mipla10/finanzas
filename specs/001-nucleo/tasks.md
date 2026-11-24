@@ -241,7 +241,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** las reglas de cómo debe ser cada tipo de movimiento y cómo saber qué cambió al corregir.
   - **Commit:** `feat(001): T19 reglas por tipo y diff de versiones`
 
-- [ ] **T20 · Saldo puro, agrupación y advertencias (`domain/balances.py`)**
+- [x] **T20 · Saldo puro, agrupación y advertencias (`domain/balances.py`)**
   - **Cubre:** RF-14, RF-15, RF-16 · Plan §3.1, §3.2, §3.4
   - **Depende de:** T19
   - **Tests primero:** `tests/unit/test_balances.py` y `tests/unit/test_warnings.py`:

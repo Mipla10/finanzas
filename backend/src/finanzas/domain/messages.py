@@ -26,6 +26,11 @@ MESSAGES: dict[str, str] = {
     "not_allowed_for_type": "Este campo no aplica a este tipo de movimiento.",
     "same_account": "La cuenta de destino debe ser distinta de la de origen.",
     "category_wrong_kind": "La categoría no es de la clase correcta para este tipo.",
+    # Advertencias de saldo (RF-14): avisan, nunca bloquean
+    "negative_balance": "La cuenta {account} quedó con saldo negativo.",
+    "archived_nonzero_balance": (
+        "La cuenta archivada {account} quedó con saldo distinto de cero."
+    ),
     # Validación de formato (traducción de los errores de Pydantic, T10)
     "required": "Este campo es obligatorio.",
     "int_type": "Debe ser un número entero.",
