@@ -619,6 +619,19 @@ Los movimientos anulados siguen en `movements`, así que cuentan como uso.
   zona, por ejemplo `"2026-11-23T10:15:00-05:00"`.
 - **Advertencias:** toda operación que modifica datos devuelve
   `"warnings": [...]` (lista vacía si no hay ninguna).
+- **Listas:** todo listado responde un objeto con la lista en `items`,
+  también `GET /accounts` y `GET /categories`:
+  `{ "items": [ ... ] }`. `GET /movements` añade `totals` y `page`
+  (ver 4.3).
+- **PATCH:** solo cambia lo que viene en el JSON; un campo ausente no
+  cambia.
+  - En `PATCH /movements/{id}`, enviar `null` borra un dato opcional
+    (`merchant`, `note`). En un campo obligatorio para el tipo
+    (`amount_cents`, `date`, cuentas, categoría de gasto o ingreso),
+    `null` responde `422`.
+  - En `PATCH /accounts/{id}`, `null` equivale a no enviar el campo:
+    nombre, saldo inicial y fecha de inicio no se pueden borrar.
+  - `PATCH /categories/{id}` exige `name`.
 
 ### 4.2 Endpoints
 
@@ -839,6 +852,10 @@ Todo error tiene la misma forma:
 ```
 - **`field`** es la ruta del campo que falló (`"amount_cents"`,
   `"from_account_id"`…) o `null` si el error no es de un campo concreto.
+  En los parámetros de consulta que se pueden repetir (`account_id`,
+  `category_id`, `type` en `GET /movements`), la ruta incluye la
+  posición del valor que falló, contando desde 0: `"type.0"` es el
+  primer `type` de la URL.
 - **`details`** lista los errores adicionales cuando falla más de un
   campo, cada uno con `{field, message}`.
 
