@@ -44,6 +44,7 @@ MESSAGES: dict[str, str] = {
     "account_archived": "La cuenta está archivada.",
     "category_archived": "La categoría está archivada.",
     "movement_voided": "El movimiento está anulado y no se puede corregir.",
+    "already_voided": "El movimiento ya está anulado.",
     "adjustment_not_correctable": (
         "Los ajustes no se corrigen: anúlalo y vuelve a ajustar."
     ),

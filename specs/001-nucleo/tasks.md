@@ -439,7 +439,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** si corriges lo mismo desde la web y desde WhatsApp a la vez, no se pierde ninguno de los dos cambios.
   - **Commit:** `feat(001): T36 correcciones simultáneas`
 
-- [ ] **T37 · Anular**
+- [x] **T37 · Anular**
   - **Cubre:** RF-14, RF-21 · CL-25 (anular), CL-26, CL-27 · Plan §3.7
   - **Depende de:** T32
   - **Tests primero:** `tests/integration/test_void_service.py`:

@@ -23,7 +23,11 @@ from finanzas.domain.movements import (
     validate_category_kind,
     validate_shape,
 )
-from finanzas.domain.text import normalize_merchant, normalize_note
+from finanzas.domain.text import (
+    normalize_merchant,
+    normalize_note,
+    normalize_void_reason,
+)
 from finanzas.services.warnings import warnings_for
 
 
@@ -333,3 +337,34 @@ def correct_movement(
     warnings = warnings_for(session, owner_id, affected)
     session.commit()
     return CorrectionResult(movement, changed=True, warnings=warnings)
+
+
+def void_movement(
+    session: Session,
+    owner_id: uuid.UUID,
+    clock: Clock,
+    movement_id: uuid.UUID,
+    *,
+    reason: str | None = None,
+) -> MovementResult:
+    """Anula un movimiento (RF-21, plan §3.7): deja de contar en saldos y
+    totales, pero sigue siendo consultable. Es definitivo y no crea versión.
+
+    Se permite aunque la cuenta o la categoría estén archivadas (CL-27).
+    """
+    movement = movements_repo.get_owned_for_update(session, owner_id, movement_id)
+    if movement is None:
+        raise NotFound("resource_not_found", field="movement_id")
+    if movement.voided_at is not None:
+        raise Conflict("already_voided")
+    movement.void_reason = normalize_void_reason(reason)
+    movement.voided_at = clock.now()
+    accounts = [
+        account
+        for account_id in (movement.from_account_id, movement.to_account_id)
+        if account_id is not None
+        and (account := accounts_repo.get_owned(session, owner_id, account_id))
+    ]
+    warnings = warnings_for(session, owner_id, accounts)
+    session.commit()
+    return MovementResult(movement, warnings)
