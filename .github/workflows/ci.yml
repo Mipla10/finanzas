@@ -1,0 +1,44 @@
+# Integración continua (plan 001 §5.7): lint + migraciones + tests con cobertura.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: finanzas
+          POSTGRES_PASSWORD: finanzas
+          POSTGRES_DB: finanzas_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # Credenciales y contraseña SOLO de CI: no son secretas.
+      DATABASE_URL: postgresql+psycopg://finanzas:finanzas@localhost:5432/finanzas_test
+      TEST_DATABASE_URL: postgresql+psycopg://finanzas:finanzas@localhost:5432/finanzas_test
+      APP_PASSWORD: ci-password-not-secret
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Instalar dependencias
+        run: uv sync --frozen
+      - name: Lint
+        run: uv run ruff check .
+      - name: Formato
+        run: uv run ruff format --check .
+      - name: Migraciones
+        run: uv run alembic upgrade head
+      - name: Tests con cobertura
+        run: uv run pytest --cov=finanzas --cov-fail-under=90

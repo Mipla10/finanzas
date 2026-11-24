@@ -15,6 +15,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8",
+    "pytest-cov>=5",
     "ruff>=0.6",
 ]
 
@@ -24,6 +25,13 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true          # mide también las ramas (if/else), plan §8.4
+source = ["finanzas"]
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:"]   # única exclusión permitida
 
 [tool.ruff]
 line-length = 88

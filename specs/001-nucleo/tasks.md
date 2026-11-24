@@ -83,7 +83,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** se prepara el sistema que crea las tablas y una forma de que cada prueba deje la base de datos limpia al terminar.
   - **Commit:** `chore(001): T5 alembic y sesión de pruebas con rollback`
 
-- [ ] **T6 · Integración continua (GitHub Actions)**
+- [x] **T6 · Integración continua (GitHub Actions)**
   - **Cubre:** RNF-8, criterio de finalización 8 · Plan §5.7
   - **Depende de:** T5
   - **Tests primero:** no aplica. La CI ejecuta los tests que ya existen (T1–T5).
