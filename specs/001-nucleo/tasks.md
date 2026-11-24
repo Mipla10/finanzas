@@ -623,7 +623,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** si algo falla, no queda nada a medias; y todo lo que la app dice, lo dice en español.
   - **Commit:** `test(001): T52 atomicidad e idioma de errores`
 
-- [ ] **T53 · Escenario del mes sintético**
+- [x] **T53 · Escenario del mes sintético**
   - **Cubre:** RNF-1, criterio de finalización 3 · Plan §2.4, §8.1
   - **Depende de:** T50
   - **Tests primero:** `tests/scenarios/test_month.py`. Por la API se crean las cuentas y los movimientos M1–M8 de §2.4, se corrige M2 y se anula M6. Los saldos, el subtotal, el total y los totales del listado se comparan con los valores fijos del plan.
