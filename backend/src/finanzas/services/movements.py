@@ -1,6 +1,7 @@
 """Casos de uso de movimientos (RF-7 a RF-11, plan §3.5)."""
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
@@ -449,3 +450,76 @@ def get_history(
         else None
     )
     return MovementHistory(movement.id, views, voided)
+
+
+# --- Listado (RF-17, plan §5.1) ---
+
+DEFAULT_LIMIT = 50
+MAX_LIMIT = 200
+
+
+@dataclass(frozen=True)
+class MovementPage:
+    items: list[Movement]
+    total_items: int  # del filtro completo, no solo de la página
+    limit: int
+    offset: int
+
+
+def _check_owned_ids(
+    session: Session,
+    owner_id: uuid.UUID,
+    ids: Sequence[uuid.UUID] | None,
+    field: str,
+    get_owned: Any,
+) -> None:
+    """Un id inexistente o de otro usuario en un filtro: «no existe» (RF-22)."""
+    for item_id in ids or ():
+        if get_owned(session, owner_id, item_id) is None:
+            raise NotFound("resource_not_found", field=field)
+
+
+def list_movements(
+    session: Session,
+    owner_id: uuid.UUID,
+    *,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    account_ids: Sequence[uuid.UUID] | None = None,
+    category_ids: Sequence[uuid.UUID] | None = None,
+    types: Sequence[MovementType] | None = None,
+    include_voided: bool = False,
+    limit: int = DEFAULT_LIMIT,
+    offset: int = 0,
+) -> MovementPage:
+    """Movimientos del dueño, filtrados y paginados (RF-17)."""
+    if limit < 1:
+        raise InvalidData("ge", field="limit", limit=1)
+    if limit > MAX_LIMIT:
+        raise InvalidData("le", field="limit", limit=MAX_LIMIT)
+    if offset < 0:
+        raise InvalidData("ge", field="offset", limit=0)
+    if date_from is not None and date_to is not None and date_from > date_to:
+        raise InvalidData("date_range_inverted", field="date_from")
+    _check_owned_ids(
+        session, owner_id, account_ids, "account_id", accounts_repo.get_owned
+    )
+    _check_owned_ids(
+        session, owner_id, category_ids, "category_id", categories_repo.get_owned
+    )
+
+    conditions = movements_repo.filter_conditions(
+        owner_id,
+        date_from=date_from,
+        date_to=date_to,
+        account_ids=account_ids,
+        category_ids=category_ids,
+        types=types,
+        include_voided=include_voided,
+    )
+    return MovementPage(
+        items=movements_repo.list_page(session, conditions, limit=limit, offset=offset),
+        total_items=movements_repo.count(session, conditions),
+        limit=limit,
+        offset=offset,
+    )

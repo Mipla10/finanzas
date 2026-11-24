@@ -464,7 +464,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** ver todo lo que le pasó a un movimiento desde que se creó.
   - **Commit:** `feat(001): T38 historial de movimientos`
 
-- [ ] **T39 · Listado: filtros, orden y paginación**
+- [x] **T39 · Listado: filtros, orden y paginación**
   - **Cubre:** RF-17 · CL-35, CL-36, CL-37 · Plan §5.1
   - **Depende de:** T31, T37
   - **Tests primero:** `tests/integration/test_list_service.py`:
