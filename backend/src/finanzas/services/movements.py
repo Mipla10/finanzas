@@ -1,6 +1,7 @@
 """Casos de uso de movimientos (RF-7 a RF-11, plan §3.5)."""
 
 import uuid
+from dataclasses import dataclass, field
 from datetime import date
 
 from sqlalchemy.orm import Session
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 from finanzas.db.models import Account, Category, Movement, MovementVersion
 from finanzas.db.repositories import accounts as accounts_repo
 from finanzas.db.repositories import categories as categories_repo
+from finanzas.domain.balances import BalanceWarning
 from finanzas.domain.dates import Clock, validate_movement_date
 from finanzas.domain.errors import Conflict, InvalidData, NotFound
 from finanzas.domain.money import validate_amount
@@ -17,6 +19,15 @@ from finanzas.domain.movements import (
     validate_shape,
 )
 from finanzas.domain.text import normalize_merchant, normalize_note
+from finanzas.services.warnings import warnings_for
+
+
+@dataclass(frozen=True)
+class MovementResult:
+    """«Recibo» de una operación: el movimiento y los avisos de saldo (RF-14)."""
+
+    movement: Movement
+    warnings: list[BalanceWarning] = field(default_factory=list)
 
 
 def _active_account(
@@ -54,10 +65,11 @@ def create_movement(
     category_id: uuid.UUID | None = None,
     merchant: str | None = None,
     note: str | None = None,
-) -> Movement:
+) -> MovementResult:
     """Registra un gasto, ingreso, transferencia o rendimiento con su versión 1.
 
     Si algo no cumple las reglas, lanza el error y no guarda nada (RF-22).
+    Si deja una cuenta en negativo, se guarda igual y devuelve el aviso (RF-14).
     """
     if movement_type is MovementType.ADJUSTMENT:
         raise InvalidData("adjustment_not_via_movements", field="type")
@@ -120,5 +132,6 @@ def create_movement(
             **data,
         )
     )
+    warnings = warnings_for(session, owner_id, accounts)
     session.commit()
-    return movement
+    return MovementResult(movement, warnings)

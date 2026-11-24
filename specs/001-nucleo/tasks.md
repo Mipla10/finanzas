@@ -381,7 +381,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** mover plata entre tus cuentas (sin que cuente como gasto) y registrar lo que te paga el ahorro.
   - **Commit:** `feat(001): T31 transferencias y rendimientos`
 
-- [ ] **T32 · Advertencias al crear**
+- [x] **T32 · Advertencias al crear**
   - **Cubre:** RF-14 · CL-1, CL-2 · Plan §3.4
   - **Depende de:** T31
   - **Tests primero:** `tests/integration/test_movements_service.py`:

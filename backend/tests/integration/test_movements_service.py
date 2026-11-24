@@ -48,7 +48,7 @@ def salary(owner_a: User, make_category: Callable[..., Category]) -> Category:
 def spend(session: Session, owner: User, clock: FixedClock, **fields: Any) -> Movement:
     return service.create_movement(
         session, owner.id, clock, movement_type=EXPENSE, **fields
-    )
+    ).movement
 
 
 # --- T30: gasto e ingreso ---
@@ -110,7 +110,7 @@ def test_income_is_stored(
         amount_cents=200000000,
         to_account_id=bank.id,
         category_id=salary.id,
-    )
+    ).movement
     assert (movement.type, movement.to_account_id, movement.from_account_id) == (
         INCOME,
         bank.id,
@@ -454,7 +454,7 @@ def test_cl_12_yield_with_cents_adds_exactly(
         movement_type=YIELD,
         amount_cents=123456,
         to_account_id=bank.id,
-    )
+    ).movement
     assert (movement.category_id, movement.from_account_id) == (None, None)
     assert balances(db_session, owner_a)[bank.id] - before == 123456
 
@@ -512,7 +512,7 @@ def test_destination_account_is_checked_too(
             from_account_id=bank.id,
             to_account_id=to_id,
             on=on,
-        )
+        ).movement
 
     expect(Conflict, "account_archived", "to_account_id", lambda: transfer(archived.id))
     expect(NotFound, "resource_not_found", "to_account_id", lambda: transfer(theirs.id))
@@ -522,3 +522,106 @@ def test_destination_account_is_checked_too(
         "date",
         lambda: transfer(late.id, on=date(2026, 11, 10)),
     )
+
+
+# --- T32: advertencias al crear (RF-14, CL-1, CL-2) ---
+
+
+def test_creating_returns_the_movement_and_no_warnings_when_all_is_fine(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    bank: Account,
+    food: Category,
+) -> None:
+    result = service.create_movement(
+        db_session,
+        owner_a.id,
+        clock,
+        movement_type=EXPENSE,
+        amount_cents=1,
+        from_account_id=bank.id,
+        category_id=food.id,
+    )
+    assert result.movement.amount_cents == 1
+    assert result.warnings == []
+
+
+def test_cl_1_expense_into_negative_is_saved_with_a_warning(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    food: Category,
+    make_account: Callable[..., Account],
+) -> None:
+    nequi = make_account(owner_a, name="Nequi Prueba", initial_balance_cents=1000)
+    result = service.create_movement(
+        db_session,
+        owner_a.id,
+        clock,
+        movement_type=EXPENSE,
+        amount_cents=6000,
+        from_account_id=nequi.id,
+        category_id=food.id,
+    )
+    assert count(db_session, Movement) == 1  # se guardó: avisa, no bloquea
+    assert [
+        (w.code, w.account_id, w.account_name, w.balance_cents) for w in result.warnings
+    ] == [("negative_balance", nequi.id, "Nequi Prueba", -5000)]
+    assert "Nequi Prueba" in result.warnings[0].message
+
+
+def test_cl_2_expense_before_same_day_income(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    food: Category,
+    salary: Category,
+    make_account: Callable[..., Account],
+) -> None:
+    nequi = make_account(owner_a, name="Nequi Prueba", initial_balance_cents=0)
+    expense = service.create_movement(
+        db_session,
+        owner_a.id,
+        clock,
+        movement_type=EXPENSE,
+        amount_cents=5000,
+        from_account_id=nequi.id,
+        category_id=food.id,
+    )
+    assert [w.balance_cents for w in expense.warnings] == [-5000]
+    income = service.create_movement(
+        db_session,
+        owner_a.id,
+        clock,
+        movement_type=INCOME,
+        amount_cents=5000,
+        to_account_id=nequi.id,
+        category_id=salary.id,
+    )
+    assert income.warnings == []  # ya volvió a 0: sin aviso
+
+
+def test_transfer_checks_both_accounts(
+    db_session: Session,
+    clock: FixedClock,
+    owner_a: User,
+    make_account: Callable[..., Account],
+) -> None:
+    origin = make_account(owner_a, name="Origen Prueba", initial_balance_cents=0)
+    destination = make_account(
+        owner_a, name="Destino Prueba", initial_balance_cents=-10000
+    )
+    result = service.create_movement(
+        db_session,
+        owner_a.id,
+        clock,
+        movement_type=TRANSFER,
+        amount_cents=1000,
+        from_account_id=origin.id,
+        to_account_id=destination.id,
+    )
+    assert [(w.account_name, w.balance_cents) for w in result.warnings] == [
+        ("Origen Prueba", -1000),
+        ("Destino Prueba", -9000),
+    ]
