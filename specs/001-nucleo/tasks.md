@@ -254,7 +254,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la fórmula del saldo (lo inicial, más lo que entra, menos lo que sale) y los avisos cuando algo queda en negativo.
   - **Commit:** `feat(001): T20 saldo derivado y advertencias`
 
-- [ ] **T21 · Cálculo del ajuste (`domain/adjustments.py`)**
+- [x] **T21 · Cálculo del ajuste (`domain/adjustments.py`)**
   - **Cubre:** RF-12 · CL-14, CL-16 · Plan §3.3
   - **Depende de:** T16
   - **Tests primero:** `tests/unit/test_adjustments.py`:
