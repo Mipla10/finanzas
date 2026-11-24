@@ -406,7 +406,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** le dices a la app «en el banco veo X» y ella crea el movimiento que cuadra la cuenta.
   - **Commit:** `feat(001): T33 ajustes de saldo`
 
-- [ ] **T34 · Corrección básica con versión**
+- [x] **T34 · Corrección básica con versión**
   - **Cubre:** RF-14, RF-19, RF-20 · CL-19, CL-24 · Plan §3.6
   - **Depende de:** T32
   - **Tests primero:** `tests/integration/test_corrections_service.py`:
