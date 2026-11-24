@@ -504,7 +504,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la lista de tus comercios frecuentes, para autocompletar más adelante.
   - **Commit:** `feat(001): T41 lista de comercios usados`
 
-- [ ] **T42 · Servicio de saldos agrupados**
+- [x] **T42 · Servicio de saldos agrupados**
   - **Cubre:** RF-15, RF-16 · CL-4 · Plan §3.2
   - **Depende de:** T24, T26
   - **Tests primero:** `tests/integration/test_balances_service.py`:
