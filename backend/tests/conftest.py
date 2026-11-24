@@ -10,9 +10,12 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
+from finanzas.api import deps
+from finanzas.config import Settings
 from finanzas.db.base import make_engine
 from finanzas.db.models import Account, Category, Movement, MovementVersion, User
 from finanzas.domain.accounts import AccountType
@@ -95,6 +98,30 @@ def owner_a(db_session: Session, clock: FixedClock) -> User:
 def owner_b(db_session: Session, clock: FixedClock) -> User:
     """Segundo usuario: para probar que nadie ve datos ajenos (RNF-5)."""
     return _make_user(db_session, clock)
+
+
+# --- Cliente HTTP (plan §8.2) ---
+
+TEST_PASSWORD = "clave-de-prueba-12"
+AUTH = {"Authorization": f"Bearer {TEST_PASSWORD}"}
+
+
+@pytest.fixture
+def client(db_session: Session, clock: FixedClock, owner_a: User) -> TestClient:
+    """Cliente con contraseña, reloj fijo y la sesión con rollback del test.
+
+    Actúa como `owner_a`. Sin `with`: no corre el arranque (lifespan), así que
+    no siembra usuarios reales en la BD de pruebas.
+    """
+    # Aquí y no arriba: finanzas.main exige APP_PASSWORD al importarse.
+    from finanzas.main import create_app
+
+    settings = Settings(_env_file=None, app_password=TEST_PASSWORD, app_env="local")
+    app = create_app(settings)
+    app.dependency_overrides[deps.get_session] = lambda: db_session
+    app.dependency_overrides[deps.get_clock] = lambda: clock
+    app.dependency_overrides[deps.get_owner_id] = lambda: owner_a.id
+    return TestClient(app, headers=AUTH, raise_server_exceptions=False)
 
 
 @pytest.fixture

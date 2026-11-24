@@ -2,11 +2,15 @@
 
 import hmac
 import uuid
+from collections.abc import Iterator
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
 
 from finanzas.config import Settings
+from finanzas.domain.dates import Clock, SystemClock
 from finanzas.domain.messages import render
 
 # auto_error=False: los errores los damos nosotros, en español.
@@ -42,3 +46,20 @@ def get_owner_id(request: Request) -> uuid.UUID:
     """
     owner_id: uuid.UUID = request.app.state.owner_id
     return owner_id
+
+
+def get_session(request: Request) -> Iterator[Session]:
+    """Una sesión de BD por petición; los servicios confirman o deshacen."""
+    with Session(request.app.state.engine) as session:
+        yield session
+
+
+def get_clock() -> Clock:
+    """El reloj real; los tests lo sustituyen por un FixedClock (plan §5.5)."""
+    return SystemClock()
+
+
+# Atajos para las firmas de los routers.
+SessionDep = Annotated[Session, Depends(get_session)]
+ClockDep = Annotated[Clock, Depends(get_clock)]
+OwnerDep = Annotated[uuid.UUID, Depends(get_owner_id)]

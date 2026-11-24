@@ -519,7 +519,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
 
 ## Fase 4 — API
 
-- [ ] **T43 · API de cuentas**
+- [x] **T43 · API de cuentas**
   - **Cubre:** RF-4, RF-5 · Plan §4.2, §4.3
   - **Depende de:** T10, T27, T26
   - **Tests primero:** `tests/integration/test_accounts_api.py`. Los 7 endpoints de cuentas devuelven 201, 200 o 204 según el caso, y 404, 409 o 422 en errores, con el formato estándar y el JSON de ejemplo del plan.
