@@ -204,6 +204,29 @@ def create_movement(
     return MovementResult(movement, warnings)
 
 
+def get_movement(
+    session: Session, owner_id: uuid.UUID, movement_id: uuid.UUID
+) -> Movement:
+    """Un movimiento con su estado, vigente o anulado (RF-18)."""
+    movement = movements_repo.get_owned(session, owner_id, movement_id)
+    if movement is None:  # inexistente o de otro usuario: misma respuesta (RF-22)
+        raise NotFound("resource_not_found", field="movement_id")
+    return movement
+
+
+def names_for(
+    session: Session, owner_id: uuid.UUID, movements: Sequence[Movement]
+) -> dict[uuid.UUID, str]:
+    """Nombre actual de las cuentas y categorías de esos movimientos (C-5)."""
+    ids = {
+        ref
+        for m in movements
+        for ref in (m.from_account_id, m.to_account_id, m.category_id)
+        if ref is not None
+    }
+    return movements_repo.names_of(session, owner_id, ids)
+
+
 class _Unset:
     """Marca «este dato no se envió» (distinto de None = «bórralo»)."""
 

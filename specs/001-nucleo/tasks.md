@@ -535,7 +535,7 @@ prueba en una función `test_cl_<n>_…` (por ejemplo, `test_cl_23_…`).
   - **En simple:** la ventanilla de las categorías.
   - **Commit:** `feat(001): T44 endpoints de categorías`
 
-- [ ] **T45 · API para crear y ver movimientos**
+- [x] **T45 · API para crear y ver movimientos**
   - **Cubre:** RF-1, RF-18 · CL-7, CL-11 · Plan §4.1, §4.3
   - **Depende de:** T10, T32
   - **Tests primero:** `tests/integration/test_movements_api.py`:
