@@ -901,6 +901,15 @@ función clave(texto):
   movimientos **vigentes** del usuario. Se ordena por número de usos
   (descendente) y, a igual uso, por último uso (descendente). Para cada
   clave se muestra la forma mostrada más reciente.
+  - **Tope (`limit`):** 20 por defecto (§4.2), con mínimo 1 y máximo 200,
+    los mismos límites que el listado de movimientos (§5.1). Fuera de ese
+    rango, `422`.
+  - **«Último uso» y «más reciente»:** se decide por la **fecha del
+    movimiento** y, en el mismo día, por su **momento de registro**
+    (`created_at`), ambos descendentes. Es el mismo orden que el listado
+    (§5.1). Si aun así empatan, se desempata por `id` para elegir la forma
+    mostrada y por `merchant_key` para ordenar la lista, así el resultado
+    es siempre el mismo.
 
 ### 5.4 Categorías precargadas
 - Viven en `domain/defaults.py`, como una lista inmutable de
