@@ -402,6 +402,33 @@ creó un ajuste `out` por `350000`.
 Las transferencias M3 y M5, el ajuste M8 y el movimiento anulado M6 no
 cuentan.
 
+**Ampliación para el escenario del mes (criterio de finalización 3).**
+El criterio 3 de la spec pide dos bolsillos y una transferencia entre
+bolsillos. El escenario completo (`tests/scenarios/test_month.py`) añade
+a lo anterior:
+
+| id | name | type | parent_id | initial_balance_cents |
+|----|------|------|-----------|----------------------:|
+| A5 | Viajes | pocket | A1 | 0 ($ 0) |
+
+| id | type | amount_cents | date | from | to | category | merchant | estado |
+|----|------|-------------:|------|------|----|----------|----------|--------|
+| M9 | transfer | 10000000 | 11-21 | A2 | A5 | — | — | vigente (entre bolsillos) |
+
+Con la ampliación cambian solo los saldos de los dos bolsillos:
+
+| Cuenta | Cálculo | Saldo |
+|--------|---------|------:|
+| Ahorro | 351234567 − 10000000 | **341234567** |
+| Viajes | 0 + 10000000 | **10000000** |
+| Subtotal Lulo + bolsillos | 279300000 + 341234567 + 10000000 | **630534567** (no cambia) |
+| **Total general** | 630534567 + 17150000 + 25000000 | **672684567** (no cambia) |
+
+Los totales del listado tampoco cambian, porque M9 es una transferencia.
+El listado de noviembre muestra 8 movimientos: M1 a M5, M7, M8 y M9.
+Los demás ejemplos del plan (§4.3) y el fixture `month_scenario` usan
+solo el ejemplo base A1–A4, M1–M8.
+
 ---
 
 ## 3. Algoritmos (pseudocódigo)

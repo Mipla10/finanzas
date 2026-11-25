@@ -1,7 +1,9 @@
 """T53: un mes completo por la API con los valores fijos del plan (RNF-1, plan §2.4).
 
-Todo se registra como lo haría la app: cuentas, categorías, M1–M8, la corrección de
-M2 y la anulación de M6. Los números esperados son los calculados a mano en §2.4.
+Todo se registra como lo haría la app: cuentas con dos bolsillos, categorías, M1–M9
+(retiro de cajero con comisión, transferencia entre bolsillos, rendimiento y ajuste),
+la corrección de M2 y la anulación de M6 (criterio de finalización 3 de la spec).
+Los números esperados son los calculados a mano en §2.4.
 """
 
 from datetime import timedelta
@@ -23,7 +25,7 @@ def post(client: TestClient, path: str, body: dict[str, Any], expect: int = 201)
 
 @pytest.fixture
 def month(client: TestClient, clock: FixedClock) -> dict[str, str]:
-    """Registra el mes de §2.4 y devuelve los ids por nombre (A1–A4, M1–M8)."""
+    """Registra el mes de §2.4 y devuelve los ids por nombre (A1–A5, M1–M9)."""
     ids: dict[str, str] = {}
     start = "2026-11-01"
     for key, name, kind, parent, initial in [
@@ -31,6 +33,7 @@ def month(client: TestClient, clock: FixedClock) -> dict[str, str]:
         ("A2", "Ahorro", "pocket", "A1", 300000000),
         ("A3", "Nequi", "digital_wallet", None, 20000000),
         ("A4", "Efectivo", "cash", None, 5000000),
+        ("A5", "Viajes", "pocket", "A1", 0),
     ]:
         body = {
             "name": name,
@@ -53,7 +56,7 @@ def month(client: TestClient, clock: FixedClock) -> dict[str, str]:
         ids[key] = post(client, "/movements", body)["movement"]["id"]
         clock.advance(timedelta(minutes=1))  # orden de registro estable
 
-    A1, A2, A3, A4 = ids["A1"], ids["A2"], ids["A3"], ids["A4"]
+    A1, A2, A3, A4, A5 = (ids[f"A{n}"] for n in range(1, 6))
     movement(
         "M1",
         type="income",
@@ -107,6 +110,14 @@ def month(client: TestClient, clock: FixedClock) -> dict[str, str]:
     movement(
         "M7", type="yield", amount_cents=1234567, date="2026-11-20", to_account_id=A2
     )
+    movement(
+        "M9",
+        type="transfer",
+        amount_cents=10000000,
+        date="2026-11-21",
+        from_account_id=A2,
+        to_account_id=A5,
+    )
 
     correction = client.patch(
         f"{API}/movements/{ids['M2']}", json={"amount_cents": 2500000}
@@ -132,10 +143,12 @@ def test_rnf_1_balances_match_the_plan_exactly(
     by_name = {a["name"]: a["balance_cents"] for a in balances["accounts"]}
     assert by_name == {
         "Lulo": 279300000,
-        "Ahorro": 351234567,
+        "Ahorro": 341234567,
         "Nequi": 17150000,
         "Efectivo": 25000000,
+        "Viajes": 10000000,
     }
+    # M9 mueve dinero entre bolsillos: el subtotal de Lulo y el total no cambian.
     assert balances["groups"] == [
         {"bank_id": month["A1"], "name": "Lulo", "subtotal_cents": 630534567}
     ]
@@ -156,9 +169,9 @@ def test_rnf_1_november_list_totals_match_the_plan(
         "net_cents": 198034567,
     }
     # M6 anulado no aparece; transferencias y ajuste sí, pero no suman.
+    assert body["page"]["total_items"] == 8
     listed = {item["id"] for item in body["items"]}
-    assert listed == {month[f"M{n}"] for n in (1, 2, 3, 4, 5, 7, 8)}
-    assert body["page"]["total_items"] == 7
+    assert listed == {month[f"M{n}"] for n in (1, 2, 3, 4, 5, 7, 8, 9)}
 
 
 def test_m2_history_and_m8_adjustment_match_the_plan(
