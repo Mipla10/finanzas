@@ -10,7 +10,6 @@ MESSAGES: dict[str, str] = {
     # Genéricos
     "invalid_value": "El valor no es válido.",
     "resource_not_found": "No se encontró el recurso.",
-    "state_conflict": "La operación no es posible en el estado actual.",
     "too_long": "El texto supera el máximo de {max_length} caracteres.",
     # Dinero (RF-1)
     "amount_not_integer": "Debe ser un número entero de centavos.",

@@ -1,6 +1,6 @@
 # Spec 001 — Núcleo
 
-- **Estado:** Borrador v2, simplificada para el MVP (pendiente de aprobación)
+- **Estado:** Implementada
 - **Fecha:** 2026-11-23
 - **Roadmap:** primera versión funcional (001 de 008)
 

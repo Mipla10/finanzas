@@ -22,7 +22,7 @@ from finanzas.api import deps
 from finanzas.config import Settings
 from finanzas.db.models import Account, Category, Movement, MovementVersion, User
 from finanzas.domain import messages
-from finanzas.domain.errors import Conflict, InvalidData, NotFound
+from finanzas.domain.errors import InvalidData, NotFound
 from finanzas.main import API_PREFIX, create_app
 from finanzas.services import movements as movements_service
 
@@ -44,11 +44,6 @@ def raise_invalid() -> None:
 @probe.get("/probe/not-found")
 def raise_not_found() -> None:
     raise NotFound("resource_not_found", field="account_id")
-
-
-@probe.get("/probe/conflict")
-def raise_conflict() -> None:
-    raise Conflict("state_conflict")
 
 
 @probe.get("/probe/boom")
@@ -104,17 +99,8 @@ def test_not_found_is_404() -> None:
     }
 
 
-def test_conflict_is_409_without_field() -> None:
-    response = make_client().get(f"{API_PREFIX}/probe/conflict", headers=AUTH)
-    assert response.status_code == 409
-    error = error_of(response)
-    assert error["type"] == "conflict"
-    assert error["field"] is None
-    assert error["message"] == messages.render("state_conflict")
-
-
 def test_unauthorized_uses_standard_format_and_keeps_header() -> None:
-    response = make_client().get(f"{API_PREFIX}/probe/conflict")
+    response = make_client().get(f"{API_PREFIX}/probe/not-found")
     assert response.status_code == 401
     assert response.headers["WWW-Authenticate"] == "Bearer"
     error = error_of(response)
@@ -333,7 +319,6 @@ def catalog_codes_of(message: str) -> set[str]:
 # genéricos de respaldo. Sus textos se prueban con las rutas de prueba de T9/T10.
 NOT_REACHABLE_VIA_API = {
     "invalid_value": "respaldo para errores de Pydantic sin traducción",
-    "state_conflict": "conflicto genérico, sin uso en los servicios",
     "amount_not_integer": "el esquema estricto responde antes con int_type",
     "gt": "la API solo usa límites ge/le",
     "lt": "la API solo usa límites ge/le",
