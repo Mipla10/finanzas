@@ -49,6 +49,23 @@ def test_password_must_be_printable_ascii_without_spaces(
         load()
 
 
+@pytest.mark.parametrize(
+    "password",
+    [
+        "corta-11chr",  # demasiado corta
+        "contraseña-de-prueba-12",  # no ASCII
+    ],
+)
+def test_invalid_password_is_not_shown_in_the_error(
+    monkeypatch: pytest.MonkeyPatch, password: str
+) -> None:
+    """El error de arranque acaba en logs: nunca debe revelar la clave (RNF-4)."""
+    monkeypatch.setenv("APP_PASSWORD", password)
+    with pytest.raises(ValidationError) as error:
+        load()
+    assert password not in str(error.value)
+
+
 def test_password_of_12_chars_is_accepted_and_kept_secret(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

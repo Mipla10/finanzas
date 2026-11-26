@@ -16,6 +16,8 @@ _ENV_CONFIG = SettingsConfigDict(
     env_file=REPO_ROOT_ENV_FILE,
     env_file_encoding="utf-8",
     extra="ignore",
+    # Los errores de arranque acaban en logs: sin valores (clave, URL de la BD).
+    hide_input_in_errors=True,
 )
 
 
